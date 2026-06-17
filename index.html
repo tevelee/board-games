@@ -54,6 +54,7 @@
       white-space: nowrap;
     }
     #status.player { border-color: var(--blue);  color: var(--blue);  }
+    #status.p2     { border-color: var(--red);   color: var(--red);   }
     #status.ai     { border-color: var(--muted); color: var(--muted); }
     #status.win    { border-color: var(--green); color: var(--green); background: #0a2414; }
     #status.lose   { border-color: var(--red);   color: var(--red);   background: #1a0707; }
@@ -77,6 +78,7 @@
     .dot.you { background: var(--blue); }
     .dot.ai  { background: var(--red); }
     .score-val { font-weight: 700; color: var(--text); min-width: 14px; text-align: center; }
+    .score-lbl { font-size: 0.72rem; color: var(--muted); }
     .controls { display: flex; gap: 6px; align-items: center; }
     select, button {
       background: #21262d;
@@ -125,15 +127,21 @@
     <div class="score">
       <div class="score-item">
         <div class="dot you"></div>
+        <span class="score-lbl" id="lbl-p1">You</span>
         <span class="score-val" id="s-you">0</span>
       </div>
       <span style="color:#484f58">:</span>
       <div class="score-item">
-        <div class="dot ai"></div>
+        <div class="dot ai" id="dot-p2"></div>
+        <span class="score-lbl" id="lbl-p2">AI</span>
         <span class="score-val" id="s-ai">0</span>
       </div>
     </div>
     <div class="controls">
+      <select id="mode">
+        <option value="pvai">vs AI</option>
+        <option value="pvp">vs Player</option>
+      </select>
       <select id="difficulty">
         <option value="easy">Easy</option>
         <option value="medium" selected>Medium</option>
@@ -157,6 +165,8 @@
   const HUMAN = 1;
   const BOT   = 2;
   const DIRS  = [[1,0],[0,1],[1,1],[1,-1]];
+
+  function isPvP() { return document.getElementById('mode').value === 'pvp'; }
 
   // ── Game state ─────────────────────────────────────────────────────────────
   let board    = new Map();   // "x,y" → 1|2
@@ -451,13 +461,15 @@
     }
 
     // Hover preview
-    if (hover && current === HUMAN && !winner && !busy) {
+    const canPlace = !winner && !busy && (isPvP() || current === HUMAN);
+    if (hover && canPlace) {
       const key = `${hover.x},${hover.y}`;
       if (!board.has(key)) {
         const { x, y } = g2p(hover.x, hover.y);
         const r = CELL / 2 - 5;
-        ctx.fillStyle   = 'rgba(88,166,255,0.12)';
-        ctx.strokeStyle = 'rgba(88,166,255,0.35)';
+        const hoverColor = current === HUMAN ? '88,166,255' : '248,81,73';
+        ctx.fillStyle   = `rgba(${hoverColor},0.12)`;
+        ctx.strokeStyle = `rgba(${hoverColor},0.35)`;
         ctx.lineWidth   = 1.5;
         ctx.beginPath();
         ctx.arc(x, y, r, 0, Math.PI * 2);
@@ -567,13 +579,13 @@
     clickMoved = false;
     canvas.classList.remove('panning');
 
-    if (!wasDrag && !busy && !winner && current === HUMAN) {
+    if (!wasDrag && !busy && !winner && (isPvP() || current === HUMAN)) {
       const p = evPos(e);
       const g = p2g(p.x, p.y);
       if (place(g.x, g.y)) {
         draw();
         renderStatus();
-        if (!winner) scheduleBot();
+        if (!winner && !isPvP()) scheduleBot();
       }
     }
   });
@@ -615,13 +627,13 @@
     touchOrigin = null;
     touchMoved  = false;
 
-    if (!moved && !busy && !winner && current === HUMAN) {
+    if (!moved && !busy && !winner && (isPvP() || current === HUMAN)) {
       const r = canvas.getBoundingClientRect();
       const g = p2g(t.clientX - r.left, t.clientY - r.top);
       if (place(g.x, g.y)) {
         draw();
         renderStatus();
-        if (!winner) scheduleBot();
+        if (!winner && !isPvP()) scheduleBot();
       }
     }
   }, { passive: false });
@@ -662,18 +674,34 @@
   const scoreAI   = document.getElementById('s-ai');
 
   function renderStatus() {
-    if (winner === HUMAN) {
-      statusEl.textContent = 'You win! 🎉';
-      statusEl.className   = 'win';
-    } else if (winner === BOT) {
-      statusEl.textContent = 'AI wins!';
-      statusEl.className   = 'lose';
-    } else if (busy) {
-      statusEl.textContent = 'Thinking…';
-      statusEl.className   = 'ai';
+    if (isPvP()) {
+      if (winner === HUMAN) {
+        statusEl.textContent = 'Player 1 wins! 🎉';
+        statusEl.className   = 'win';
+      } else if (winner === BOT) {
+        statusEl.textContent = 'Player 2 wins! 🎉';
+        statusEl.className   = 'win';
+      } else if (current === HUMAN) {
+        statusEl.textContent = 'Player 1\'s turn';
+        statusEl.className   = 'player';
+      } else {
+        statusEl.textContent = 'Player 2\'s turn';
+        statusEl.className   = 'p2';
+      }
     } else {
-      statusEl.textContent = 'Your turn';
-      statusEl.className   = 'player';
+      if (winner === HUMAN) {
+        statusEl.textContent = 'You win! 🎉';
+        statusEl.className   = 'win';
+      } else if (winner === BOT) {
+        statusEl.textContent = 'AI wins!';
+        statusEl.className   = 'lose';
+      } else if (busy) {
+        statusEl.textContent = 'Thinking…';
+        statusEl.className   = 'ai';
+      } else {
+        statusEl.textContent = 'Your turn';
+        statusEl.className   = 'player';
+      }
     }
   }
 
@@ -681,6 +709,21 @@
     scoreYou.textContent = scores.you;
     scoreAI.textContent  = scores.ai;
   }
+
+  function applyMode() {
+    const pvp = isPvP();
+    document.getElementById('difficulty').style.display = pvp ? 'none' : '';
+    document.getElementById('lbl-p1').textContent = pvp ? 'P1' : 'You';
+    document.getElementById('lbl-p2').textContent = pvp ? 'P2' : 'AI';
+    reset();
+    offset.x = 0;
+    offset.y = 0;
+    hover    = null;
+    draw();
+    renderStatus();
+  }
+
+  document.getElementById('mode').addEventListener('change', applyMode);
 
   document.getElementById('btn-new').addEventListener('click', () => {
     reset();
