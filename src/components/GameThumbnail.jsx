@@ -263,10 +263,11 @@ export default function GameThumbnail({ type }) {
       <Board x="36" y="12" w="88" h="88" rx="7" fill={paint('slate')} stroke="#47525d">
         <path d="M65 24V88M95 24V88M48 45H112M48 67H112" stroke="#d8e4ed" strokeOpacity="0.42" strokeWidth="3.2" strokeLinecap="round" />
         {kind === 'ultimate' && (
-          <g opacity="0.42">
+          <g opacity="0.56">
             {[0, 1, 2].map(r => [0, 1, 2].map(c => (
               <rect key={`${r}-${c}`} x={43 + c * 25} y={19 + r * 25} width="23" height="23" rx="2" fill="none" stroke={GOLD} strokeDasharray="2 3" />
             )))}
+            <rect x="67" y="43" width="26" height="24" rx="3" fill="none" stroke={GOLD} strokeWidth="2" />
           </g>
         )}
         <XMark x="55" y="34" />
@@ -279,8 +280,34 @@ export default function GameThumbnail({ type }) {
   }
 
   function renderGridPuzzle(kind = 'nonogram') {
+    if (kind === 'nonogram') {
+      const filled = new Set(['0-2', '1-1', '1-2', '1-3', '2-2', '3-0', '3-2', '3-4', '4-2'])
+      return (
+        <Board x="34" y="10" w="92" h="90" rx="6" fill={paint('paper')} stroke="#9b7447">
+          {[1, 3, 1, 5, 1].map((value, i) => (
+            <text key={`top-${i}`} x={61 + i * 10} y="26" fill="#6a5438" fontSize="7" fontFamily={FONT} fontWeight="900" textAnchor="middle">{value}</text>
+          ))}
+          {[1, 3, 1, 3, 1].map((value, i) => (
+            <text key={`left-${i}`} x="49" y={41 + i * 10} fill="#6a5438" fontSize="7" fontFamily={FONT} fontWeight="900" textAnchor="middle">{value}</text>
+          ))}
+          {Array.from({ length: 5 }, (_, r) => Array.from({ length: 5 }, (_, c) => (
+            <rect
+              key={`${r}-${c}`}
+              x={56 + c * 10}
+              y={32 + r * 10}
+              width="9"
+              height="9"
+              rx="0.8"
+              fill={filled.has(`${r}-${c}`) ? P1_COLOR : '#eadfcb'}
+              stroke="#9d8664"
+              strokeWidth="0.55"
+            />
+          )))}
+        </Board>
+      )
+    }
+
     const cells = Array.from({ length: 7 }, (_, r) => Array.from({ length: 7 }, (_, c) => {
-      if (kind === 'nonogram') return r === 2 || c === 3 || (r === 5 && c > 1 && c < 5)
       if (kind === 'crossword') return (r + c) % 5 === 0 || (r === 0 && c > 3) || (c === 0 && r > 3)
       if (kind === 'minesweeper') return (r + c) % 6 === 0
       return (r === c && r % 2 === 0) || (r + c) % 4 === 0
@@ -340,21 +367,55 @@ export default function GameThumbnail({ type }) {
     )
   }
 
-  function renderTiles() {
+  function NumberTile({ x, y, value, fill, text = INK, w = 29, h = 29 }) {
+    const tx = Number(x)
+    const ty = Number(y)
+    const tw = Number(w)
+    const th = Number(h)
+    const valueText = String(value)
+    return (
+      <g>
+        <rect x={tx + 2} y={ty + 3} width={tw} height={th} rx="5" fill="#020409" opacity="0.28" />
+        <rect x={tx} y={ty} width={tw} height={th} rx="5" fill={fill} />
+        <rect x={tx + 3} y={ty + 3} width={tw - 6} height={th - 6} rx="3" fill="#ffffff" opacity="0.12" />
+        <text
+          x={tx + tw / 2}
+          y={ty + th / 2 + 5}
+          fill={text}
+          fontSize={valueText.length > 3 ? 9 : valueText.length > 2 ? 11 : valueText.length > 1 ? 13 : 15}
+          fontFamily={FONT}
+          fontWeight="900"
+          textAnchor="middle"
+        >
+          {valueText}
+        </text>
+      </g>
+    )
+  }
+
+  function render2048() {
     const tiles = [
-      [49, 18, '2', P1_COLOR], [82, 18, '4', GREEN],
-      [49, 51, '8', GOLD], [82, 51, '16', P2_COLOR],
+      [45, 18, '2', '#eee4da', '#776e65'], [78, 18, '4', '#ede0c8', '#776e65'],
+      [45, 51, '128', '#f67c5f', '#f9f6f2'], [78, 51, '2048', '#edc22e', '#f9f6f2'],
     ]
     return (
-      <Board x="36" y="12" w="88" h="88" rx="8" fill={paint('slate')} stroke="#47525d">
-        {tiles.map(([x, y, value, fill]) => (
-          <g key={value}>
-            <rect x={x + 2} y={y + 3} width="29" height="29" rx="5" fill="#020409" opacity="0.28" />
-            <rect x={x} y={y} width="29" height="29" rx="5" fill={fill} />
-            <rect x={x + 3} y={y + 3} width="23" height="23" rx="3" fill="#ffffff" opacity="0.12" />
-            <text x={x + 14.5} y={y + 19} fill={INK} fontSize={value.length > 1 ? 13 : 15} fontFamily={FONT} fontWeight="900" textAnchor="middle">{value}</text>
-          </g>
-        ))}
+      <Board x="36" y="12" w="88" h="88" rx="8" fill="#4b4139" stroke="#75685c">
+        <rect x="43" y="16" width="74" height="74" rx="7" fill="#72665d" opacity="0.74" />
+        {tiles.map(([x, y, value, fill, text]) => <NumberTile key={value} x={x} y={y} value={value} fill={fill} text={text} />)}
+      </Board>
+    )
+  }
+
+  function renderThrees() {
+    const tiles = [
+      [45, 18, '1', '#5aa9ff', '#ffffff'], [78, 18, '2', '#ff6f61', '#ffffff'],
+      [45, 51, '3', '#f7f3e8', '#2f4050'], [78, 51, '6', '#f7f3e8', '#2f4050'],
+    ]
+    return (
+      <Board x="36" y="12" w="88" h="88" rx="8" fill={paint('paper')} stroke="#9b7447">
+        <rect x="43" y="16" width="74" height="74" rx="8" fill="#cfc1a4" opacity="0.72" />
+        {tiles.map(([x, y, value, fill, text]) => <NumberTile key={value} x={x} y={y} value={value} fill={fill} text={text} />)}
+        <path d="M105 35L111 41L105 47" fill="none" stroke={GOLD} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
       </Board>
     )
   }
@@ -374,28 +435,42 @@ export default function GameThumbnail({ type }) {
   function renderHex(kind = 'hex') {
     return (
       <Board x="30" y="11" w="100" h="88" rx="7" fill={paint('slate')} stroke="#47525d">
+        <path d="M49 20H111M49 88H111" stroke={P1_COLOR} strokeWidth="3" strokeLinecap="round" opacity="0.72" />
+        <path d="M39 33L55 84M121 33L105 84" stroke={P2_COLOR} strokeWidth="3" strokeLinecap="round" opacity="0.72" />
         {Array.from({ length: 5 }, (_, r) => Array.from({ length: 5 }, (_, c) => (
           <HexCell
             key={`${r}-${c}`}
             cx={55 + c * 13 + r * 6.5}
             cy={28 + r * 12}
             r="7"
-            fill={(r + c) % 2 ? '#26313a' : '#172129'}
-            stroke="#53606c"
+            fill={(r + c) % 2 ? '#2f3b45' : '#1d2831'}
+            stroke="#72808c"
           />
         )))}
-        {kind === 'hive' ? (
-          <>
-            <HexCell cx="80" cy="56" r="11" fill={paint('goldDisc')} stroke="#f0cf75" />
-            <path d="M75 56H85M80 51V61" stroke="#533b16" strokeWidth="2" strokeLinecap="round" />
-          </>
-        ) : (
-          <>
-            <Piece x="73" y="50" r="6" fill={paint('p1Disc')} />
-            <Piece x="92" y="62" r="6" fill={paint('p2Disc')} />
-          </>
-        )}
+        <Piece x="73" y="50" r="6" fill={paint('p1Disc')} />
+        <Piece x="92" y="62" r="6" fill={paint('p2Disc')} />
       </Board>
+    )
+  }
+
+  function renderHive() {
+    const tiles = [
+      [65, 43, paint('goldDisc'), '#5f4317', 'M60 43H70M65 38V48'],
+      [91, 43, paint('whiteStone'), '#38424d', 'M86 42C89 38 94 38 97 42M88 48H95'],
+      [78, 65, paint('greenDisc'), '#12351d', 'M73 65H83M78 60L83 69M78 60L73 69'],
+      [104, 65, paint('p2Disc'), '#681a16', 'M99 65H109M104 60V70'],
+      [52, 65, paint('p1Disc'), '#123760', 'M47 70C50 60 55 60 58 70'],
+    ]
+    return (
+      <g>
+        {tiles.map(([cx, cy, fill, stroke, mark], index) => (
+          <g key={index}>
+            <ellipse cx={cx} cy={cy + 12} rx="13" ry="4" fill="#020409" opacity="0.28" />
+            <HexCell cx={cx} cy={cy} r="15" fill={fill} stroke="#f4e6b8" />
+            <path d={mark} stroke={stroke} strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" fill="none" opacity="0.82" />
+          </g>
+        ))}
+      </g>
     )
   }
 
@@ -587,10 +662,11 @@ export default function GameThumbnail({ type }) {
     if (type === 'crossword') return renderGridPuzzle('crossword')
     if (type === 'minesweeper') return renderGridPuzzle('minesweeper')
     if (type === 'backgammon') return renderBackgammon()
-    if (type === 'tiles') return renderTiles()
+    if (type === '2048' || type === 'tiles') return render2048()
+    if (type === 'threes') return renderThrees()
     if (type === 'battleship') return renderBattleship()
     if (type === 'hex') return renderHex('hex')
-    if (type === 'hive') return renderHex('hive')
+    if (type === 'hive') return renderHive()
     if (type === 'mancala') return renderMancala()
     if (type === 'poker') return renderCards('poker')
     if (type === 'uno') return renderCards('uno')

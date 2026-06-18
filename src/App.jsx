@@ -69,6 +69,7 @@ export default function App() {
           mode={mode}
           difficulty={difficulty}
           scores={uiState.scores}
+          hint={activeGame?.hint}
           onModeChange={handleModeChange}
           onDifficultyChange={setDifficulty}
           onNewGame={handleNewGame}

@@ -124,7 +124,7 @@ const DIFFICULTY_OPTIONS = [
 ]
 
 export default function BottomBar({
-  mode, difficulty, scores,
+  mode, difficulty, scores, hint,
   onModeChange, onDifficultyChange, onNewGame,
   canUndo, onUndo,
 }) {
@@ -144,6 +144,10 @@ export default function BottomBar({
           <span className="score-label">{pvp ? 'P2' : 'AI'}</span>
           <span className="score-val">{scores.p2}</span>
         </div>
+      </div>
+
+      <div className="bar-hint" title={hint || undefined} aria-hidden={!hint}>
+        {hint}
       </div>
 
       <div className="bar-controls">

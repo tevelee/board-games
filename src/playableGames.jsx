@@ -16,7 +16,6 @@ export const playableGames = [
     ...gamesById.morris,
     Component: MorrisBoard,
     hint: 'Tap a node to place · Tap piece then target to move',
-    hintClassName: 'morris-hint',
   },
   {
     ...gamesById.othello,
@@ -30,13 +29,11 @@ export const playableGames = [
     ...gamesById.ataxx,
     Component: AtaxxGame,
     hint: 'Tap a piece · Clone nearby or jump two cells',
-    hintClassName: 'ataxx-hint',
   },
   {
     ...gamesById.checkers,
     Component: CheckersGame,
     hint: 'Captures are forced · Chain jumps continue',
-    hintClassName: 'checkers-hint',
   },
 ]
 

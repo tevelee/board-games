@@ -40,7 +40,8 @@ Each game should eventually have:
 | Vanishing Tic Tac Toe | Grid games | vs AI, Local 2P | Also known as Tic Tac Toe Disappear or XOGone |
 | Nonogram | Puzzle | Solo | Could support generated puzzles |
 | Backgammon | Race/table games | vs AI, Local 2P | Dice, bearing off, doubling later |
-| Threes / 2048 | Puzzle | Solo | Swipe/merge grid |
+| Threes | Puzzle | Solo | Swipe/merge grid with 1, 2, and 3+ tiles |
+| 2048 | Puzzle | Solo | Swipe/merge powers-of-two grid |
 | Crosswords | Word games | Solo | Needs puzzle source or generator |
 | Chess | Abstract strategy | vs AI, Local 2P | Use proven move-generation logic |
 | Battleship | Hidden information | vs AI, Local 2P | Setup phase plus guessing phase |

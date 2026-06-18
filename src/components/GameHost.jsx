@@ -52,7 +52,7 @@ const GameHost = forwardRef(function GameHost({
       visibility:    activeGameId ? 'visible' : 'hidden',
       pointerEvents: activeGameId ? 'auto'    : 'none',
     }}>
-      {playableGames.map(({ id, Component, hint, hintClassName }) => (
+      {playableGames.map(({ id, Component }) => (
         <div
           key={id}
           className="game-layer"
@@ -67,9 +67,6 @@ const GameHost = forwardRef(function GameHost({
             difficulty={difficulty}
             onStateChange={state => handleGameStateChange(id, state)}
           />
-          {activeGameId === id && hint && (
-            <div className={`hint${hintClassName ? ` ${hintClassName}` : ''}`}>{hint}</div>
-          )}
         </div>
       ))}
     </div>

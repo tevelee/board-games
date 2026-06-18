@@ -159,20 +159,6 @@ body {
 }
 .game-canvas.panning { cursor: grabbing; }
 
-.hint {
-  position: absolute;
-  bottom: 10px;
-  right: 14px;
-  font-size: 0.68rem;
-  color: #484f58;
-  pointer-events: none;
-  text-align: right;
-  line-height: 1.5;
-}
-.morris-hint { right: auto; left: 50%; transform: translateX(-50%); text-align: center; }
-.ataxx-hint { right: auto; left: 50%; transform: translateX(-50%); text-align: center; }
-.checkers-hint { right: auto; left: 50%; transform: translateX(-50%); text-align: center; }
-
 /* ── Launcher ────────────────────────────────────────────────────────────── */
 .launcher {
   height: 100%;
@@ -427,12 +413,26 @@ body {
 .score-val   { font-weight: 700; min-width: 14px; }
 .score-sep   { color: #484f58; font-size: 0.8rem; }
 
+.bar-hint {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0 8px;
+  color: #6e7681;
+  font-size: 0.72rem;
+  line-height: 1.2;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 /* Controls */
 .bar-controls {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .select-wrap {
@@ -814,7 +814,11 @@ body {
   .select-trigger { min-width: 80px; height: 40px; font-size: 0.85rem; }
   .btn-new { height: 40px; padding: 0 14px; font-size: 0.85rem; }
 
-  .hint { display: none; }
+  .bar-hint { display: none; }
+}
+
+@media (max-width: 720px) {
+  .bar-hint { display: none; }
 }
 
 @media (max-width: 360px) {
