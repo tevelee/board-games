@@ -19,6 +19,7 @@ function makeInitialState() {
     busy:       false,
     scores:     { p1: 0, p2: 0 },
     lastNode:   -1,
+    movingFrom: -1,
   }
 }
 
@@ -91,6 +92,8 @@ const MorrisBoard = forwardRef(function MorrisBoard({ mode, difficulty, onStateC
     const newInHand = [...inHand]
     const newOnBoard = [...onBoard]
 
+    const flying = action.type === 'move' && onBoard[current] === 3 && inHand[current] === 0
+
     if (action.type === 'place') {
       newCells[action.to] = current
       newInHand[current]--
@@ -100,13 +103,14 @@ const MorrisBoard = forwardRef(function MorrisBoard({ mode, difficulty, onStateC
       newCells[action.to]   = current
     }
 
-    const placedAt = action.to
+    const placedAt  = action.to
+    const movingFrom = (action.type === 'move' && !flying) ? action.from : -1
     const mill     = detectMill(newCells, placedAt, current)
 
     if (mill) {
       return {
         ...s, cells: newCells, inHand: newInHand, onBoard: newOnBoard,
-        mustRemove: true, lastNode: placedAt, busy: false,
+        mustRemove: true, lastNode: placedAt, movingFrom, busy: false,
       }
     }
 
@@ -115,7 +119,7 @@ const MorrisBoard = forwardRef(function MorrisBoard({ mode, difficulty, onStateC
       return {
         ...s, cells: newCells, inHand: newInHand, onBoard: newOnBoard,
         winner: current, winMill: findWinMill(newCells, current), lastNode: placedAt,
-        busy: false, selected: -1,
+        movingFrom, busy: false, selected: -1,
         scores: { ...scores, [current === P1 ? 'p1' : 'p2']: scores[current === P1 ? 'p1' : 'p2'] + 1 },
       }
     }
@@ -123,7 +127,7 @@ const MorrisBoard = forwardRef(function MorrisBoard({ mode, difficulty, onStateC
     const needsAI = !pvp && opp === P2
     return {
       ...s, cells: newCells, inHand: newInHand, onBoard: newOnBoard,
-      current: opp, selected: -1, lastNode: placedAt, busy: needsAI, mustRemove: false,
+      current: opp, selected: -1, lastNode: placedAt, movingFrom, busy: needsAI, mustRemove: false,
     }
   }
 
@@ -140,7 +144,7 @@ const MorrisBoard = forwardRef(function MorrisBoard({ mode, difficulty, onStateC
       return {
         ...s, cells: newCells, onBoard: newOnBoard,
         winner: current, winMill: findWinMill(newCells, current),
-        mustRemove: false, busy: false, lastNode: nodeIdx,
+        mustRemove: false, busy: false, lastNode: nodeIdx, movingFrom: -1,
         scores: { ...scores, [current === P1 ? 'p1' : 'p2']: scores[current === P1 ? 'p1' : 'p2'] + 1 },
       }
     }
@@ -148,7 +152,7 @@ const MorrisBoard = forwardRef(function MorrisBoard({ mode, difficulty, onStateC
     const needsAI = !pvp && opp === P2
     return {
       ...s, cells: newCells, onBoard: newOnBoard,
-      current: opp, mustRemove: false, busy: needsAI, lastNode: nodeIdx,
+      current: opp, mustRemove: false, busy: needsAI, lastNode: nodeIdx, movingFrom: -1,
     }
   }
 
@@ -194,7 +198,7 @@ const MorrisBoard = forwardRef(function MorrisBoard({ mode, difficulty, onStateC
 
   // ── Derived rendering data ──────────────────────────────────────────────────
 
-  const { cells, inHand, onBoard, current, selected, mustRemove, winner, busy, lastNode, winMill } = gs
+  const { cells, inHand, onBoard, current, selected, mustRemove, winner, busy, lastNode, movingFrom, winMill } = gs
   const pvp    = mode === 'pvp'
   const flying = !winner && !mustRemove && inHand[current] === 0 && onBoard[current] === 3
 
@@ -240,9 +244,9 @@ const MorrisBoard = forwardRef(function MorrisBoard({ mode, difficulty, onStateC
 
       {/* Win mill highlight */}
       {winMill && winMill.map((n, i) => (
-        <circle key={i} className="morris-mill-ring"
+        <circle key={i}
           cx={NODE_POS[n][0]} cy={NODE_POS[n][1]} r={22}
-          fill="none" stroke="#e3b341" strokeWidth="3" />
+          fill="none" stroke="#e3b341" strokeWidth="3" opacity="0.8" />
       ))}
 
       {/* Valid placement / move targets */}
@@ -283,10 +287,21 @@ const MorrisBoard = forwardRef(function MorrisBoard({ mode, difficulty, onStateC
         const isLast   = i === lastNode
         const isSel    = i === selected
         const removable = mustRemove && validTargets.has(i)
+        const isSlide = movingFrom >= 0 && i === lastNode
         return (
-          <g key={i} className="morris-piece-g" style={{ cursor: 'pointer' }} onClick={() => handleNodeClick(i)}>
+          <g key={i}
+            className={isSlide ? 'morris-slide-g' : 'morris-piece-g'}
+            style={{
+              cursor: 'pointer',
+              ...(isSlide ? {
+                '--slide-dx': `${NODE_POS[movingFrom][0] - cx}px`,
+                '--slide-dy': `${NODE_POS[movingFrom][1] - cy}px`,
+              } : {}),
+            }}
+            onClick={() => handleNodeClick(i)}
+          >
             {isSel && (
-              <circle cx={cx} cy={cy} r={24} className="morris-sel-ring"
+              <circle cx={cx} cy={cy} r={24}
                 fill="none" stroke="#e3b341" strokeWidth="2.5" />
             )}
             <circle cx={cx} cy={cy} r={18}
