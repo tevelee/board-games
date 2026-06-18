@@ -1,6 +1,6 @@
 import { useRef, useEffect, useImperativeHandle, forwardRef } from 'react'
-import { HUMAN, BOT, detectWin } from '../game/logic.js'
-import { computeAIMove } from '../game/ai.js'
+import { HUMAN, BOT, detectWin } from '../game/gomoku/logic.js'
+import { computeAIMove } from '../game/gomoku/ai.js'
 
 const BASE_CELL = 44
 

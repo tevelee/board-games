@@ -74,12 +74,42 @@ body {
 .status-win  { color: var(--win);  border-color: var(--win);  background: #0d2614; }
 .status-lose { color: var(--p2);   border-color: var(--p2);  background: #1e0b0b; }
 
+/* ── Game tabs ───────────────────────────────────────────────────────────── */
+.game-tabs {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.tab-btn {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 0 10px;
+  height: 30px;
+  font-size: 0.8rem;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  outline: none;
+}
+.tab-btn:hover   { color: var(--text); }
+.tab-btn.active  { color: var(--text); border-color: var(--border); background: #21262d; }
+
 /* ── Canvas area ─────────────────────────────────────────────────────────── */
 .canvas-wrap {
   flex: 1;
   position: relative;
   overflow: hidden;
   min-height: 0;
+}
+
+/* Both game layers fill the canvas-wrap absolutely */
+.game-layer {
+  position: absolute;
+  inset: 0;
 }
 
 .game-canvas {
@@ -103,6 +133,7 @@ body {
   text-align: right;
   line-height: 1.5;
 }
+.morris-hint { right: auto; left: 50%; transform: translateX(-50%); text-align: center; }
 
 /* ── Bottom bar ──────────────────────────────────────────────────────────── */
 .bottom-bar {

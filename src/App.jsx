@@ -1,8 +1,9 @@
 import { useState, useRef, useCallback } from 'react'
 import GameCanvas from './components/GameCanvas'
+import MorrisBoard from './components/MorrisBoard'
 import Header from './components/Header'
 import BottomBar from './components/BottomBar'
-import { HUMAN, BOT } from './game/logic'
+import { HUMAN, BOT } from './game/gomoku/logic'
 
 const INIT_STATE = {
   current: HUMAN,
@@ -22,39 +23,76 @@ function deriveStatus(uiState, mode) {
 }
 
 export default function App() {
+  const [game,       setGame]       = useState('gomoku')
   const [mode,       setMode]       = useState('pvai')
   const [difficulty, setDifficulty] = useState('medium')
-  const [uiState,    setUiState]    = useState(INIT_STATE)
-  const canvasRef = useRef(null)
+  const [gomokuUI,   setGomokuUI]   = useState(INIT_STATE)
+  const [morrisUI,   setMorrisUI]   = useState(INIT_STATE)
+  const gomokuRef = useRef(null)
+  const morrisRef = useRef(null)
+
+  const uiState  = game === 'gomoku' ? gomokuUI  : morrisUI
+  const setUI    = game === 'gomoku' ? setGomokuUI : setMorrisUI
+  const activeRef = game === 'gomoku' ? gomokuRef : morrisRef
 
   const handleNewGame = useCallback(() => {
-    canvasRef.current?.reset()
-    setUiState(s => ({ ...INIT_STATE, scores: s.scores }))
-  }, [])
+    activeRef.current?.reset()
+    setUI(s => ({ ...INIT_STATE, scores: s.scores }))
+  }, [activeRef, setUI])
 
   const handleModeChange = useCallback((newMode) => {
     setMode(newMode)
-    // defer reset until after the new mode prop has propagated to GameCanvas
     setTimeout(() => {
-      canvasRef.current?.reset()
-      setUiState(s => ({ ...INIT_STATE, scores: s.scores }))
+      activeRef.current?.reset()
+      setUI(s => ({ ...INIT_STATE, scores: s.scores }))
     }, 0)
+  }, [activeRef, setUI])
+
+  const handleGameChange = useCallback((newGame) => {
+    setGame(newGame)
   }, [])
 
   const [statusText, statusClass] = deriveStatus(uiState, mode)
 
   return (
     <div className="app">
-      <Header statusText={statusText} statusClass={statusClass} />
+      <Header
+        game={game}
+        onGameChange={handleGameChange}
+        statusText={statusText}
+        statusClass={statusClass}
+      />
 
       <div className="canvas-wrap">
-        <GameCanvas
-          ref={canvasRef}
-          mode={mode}
-          difficulty={difficulty}
-          onStateChange={setUiState}
-        />
-        <div className="hint">Drag · Pinch/scroll to zoom · Tap to place</div>
+        <div className="game-layer" style={{
+          visibility: game === 'gomoku' ? 'visible' : 'hidden',
+          pointerEvents: game === 'gomoku' ? 'auto' : 'none',
+        }}>
+          <GameCanvas
+            ref={gomokuRef}
+            mode={mode}
+            difficulty={difficulty}
+            onStateChange={setGomokuUI}
+          />
+          {game === 'gomoku' && (
+            <div className="hint">Drag · Pinch/scroll to zoom · Tap to place</div>
+          )}
+        </div>
+
+        <div className="game-layer" style={{
+          visibility: game === 'morris' ? 'visible' : 'hidden',
+          pointerEvents: game === 'morris' ? 'auto' : 'none',
+        }}>
+          <MorrisBoard
+            ref={morrisRef}
+            mode={mode}
+            difficulty={difficulty}
+            onStateChange={setMorrisUI}
+          />
+          {game === 'morris' && (
+            <div className="hint morris-hint">Tap a node to place · Tap piece then target to move</div>
+          )}
+        </div>
       </div>
 
       <BottomBar
