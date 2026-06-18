@@ -57,6 +57,7 @@ function scoreMoveAction(cells, inHand, onBoard, from, to) {
 }
 
 function pickRemoval(cells, inHand, onBoard, removable, difficulty) {
+  if (!removable.length) return null
   if (difficulty === 'easy') return removable[Math.floor(Math.random() * removable.length)]
   // Prefer to remove opponent pieces that are in potential mills
   let best = removable[0], bestScore = -Infinity
@@ -92,6 +93,7 @@ function applyMove(cells, inHand, onBoard, player, move) {
   if (detectMill(c, move.to, player)) {
     const opp       = player === P1 ? P2 : P1
     const removable = getRemovable(c, player)
+    if (!removable.length) return { cells: c, inHand: ih, onBoard: ob }
     // For minimax we pick greedily in the opponent's worst interest
     let removeNode = removable[0]
     let worstScore = Infinity

@@ -72,8 +72,7 @@ export function detectMill(cells, node, player) {
 export function getRemovable(cells, player) {
   const opp = player === P1 ? P2 : P1
   const oppNodes = cells.flatMap((v, i) => v === opp ? [i] : [])
-  const nonMill   = oppNodes.filter(n => !isInMill(cells, n, opp))
-  return nonMill.length > 0 ? nonMill : oppNodes
+  return oppNodes.filter(n => !isInMill(cells, n, opp))
 }
 
 export function getValidPlacements(cells) {

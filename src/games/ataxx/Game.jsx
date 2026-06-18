@@ -119,7 +119,7 @@ const AtaxxGame = forwardRef(function AtaxxGame({ mode, difficulty, settings, on
       })
     }, delay)
     return () => clearTimeout(timer)
-  }, [gs.busy])
+  }, [gs.busy, gs.current, gs.lastMove?.to, gs.passed])
 
   function handleCellClick(cellIdx) {
     const { board, current, selected, winner, busy } = gs
@@ -173,6 +173,7 @@ const AtaxxGame = forwardRef(function AtaxxGame({ mode, difficulty, settings, on
   return (
     <svg
       viewBox={`0 0 ${BOARD} ${VIEW_H}`}
+      preserveAspectRatio="xMidYMin meet"
       className="ataxx-board"
       style={{ display: 'block', width: '100%', height: '100%' }}
     >

@@ -1,17 +1,34 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import Header from './components/Header'
 import BottomBar from './components/BottomBar'
 import Launcher from './components/Launcher'
 import GameHost from './components/GameHost'
-import { createGameUiState, deriveStatus } from './game/runtime.js'
+import { DRAW, PLAYER_1, PLAYER_2, createGameUiState, deriveStatus } from './game/runtime.js'
 import { playableGameIds, playableGamesById } from './playableGames.jsx'
 
+const CONFETTI = [
+  ['6%', '#58a6ff', '-118px', '-32deg', '0ms'],
+  ['12%', '#3fb950', '-144px', '24deg', '90ms'],
+  ['18%', '#f85149', '-104px', '70deg', '30ms'],
+  ['24%', '#e3b341', '-136px', '-62deg', '140ms'],
+  ['31%', '#58a6ff', '-120px', '44deg', '70ms'],
+  ['39%', '#3fb950', '-152px', '-28deg', '20ms'],
+  ['47%', '#f85149', '-112px', '58deg', '130ms'],
+  ['55%', '#e3b341', '-142px', '-48deg', '50ms'],
+  ['63%', '#58a6ff', '-124px', '36deg', '110ms'],
+  ['70%', '#3fb950', '-150px', '-72deg', '10ms'],
+  ['77%', '#f85149', '-108px', '26deg', '160ms'],
+  ['84%', '#e3b341', '-138px', '-34deg', '80ms'],
+  ['91%', '#58a6ff', '-116px', '66deg', '120ms'],
+]
+
 export default function App() {
-  const [game,        setGame]        = useState(null)
+  const [game,        setGame]        = useState(() => getGameFromLocation())
   const [mode,        setMode]        = useState('pvai')
   const [difficulty,  setDifficulty]  = useState('medium')
   const [uiState,    setUiState]      = useState(createGameUiState)
   const [settingsByGame, setSettingsByGame] = useState({})
+  const [gameOverDismissed, setGameOverDismissed] = useState(false)
   const gameHostRef = useRef(null)
   const activeGame  = game ? playableGamesById[game] : null
   const activeSettings = getGameSettings(activeGame, game ? settingsByGame[game] : null)
@@ -42,14 +59,33 @@ export default function App() {
   }, [game])
 
   const handleLaunch = useCallback((newGame) => {
-    if (playableGameIds.includes(newGame)) setGame(newGame)
+    if (!playableGameIds.includes(newGame)) return
+    setGame(newGame)
+    setGameInUrl(newGame)
   }, [])
 
   const handleShowLibrary = useCallback(() => {
     setGame(null)
+    setGameInUrl(null)
   }, [])
 
+  useEffect(() => {
+    function handleHashChange() {
+      setGame(getGameFromLocation())
+    }
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
+  }, [])
+
+  useEffect(() => {
+    setGameOverDismissed(false)
+  }, [game, uiState.winner])
+
   const [statusText, statusClass] = deriveStatus(uiState, activeMode)
+  const gameOver = game && uiState.winner
+  const gameOverCopy = gameOver
+    ? getGameOverCopy(uiState.winner, activeMode, activeGame?.title)
+    : null
 
   return (
     <div className="app">
@@ -77,6 +113,18 @@ export default function App() {
           settings={activeSettings}
           onActiveStateChange={setUiState}
         />
+
+        {gameOver && !gameOverDismissed && (
+          <GameOverOverlay
+            copy={gameOverCopy}
+            scores={uiState.scores}
+            scoreLabels={activeGame?.scoreLabels}
+            mode={activeMode}
+            onNewGame={handleNewGame}
+            onReview={() => setGameOverDismissed(true)}
+            onLibrary={handleShowLibrary}
+          />
+        )}
       </div>
 
       {game && (
@@ -101,6 +149,93 @@ export default function App() {
   )
 }
 
+function GameOverOverlay({ copy, scores, scoreLabels, mode, onNewGame, onReview, onLibrary }) {
+  const solo = mode === 'solo'
+  const pvp = mode === 'pvp'
+  const labels = scoreLabels ?? (solo ? ['Filled', 'Mistakes'] : pvp ? ['P1', 'P2'] : ['You', 'AI'])
+
+  return (
+    <div className="game-over-layer" role="dialog" aria-modal="true" aria-labelledby="game-over-title">
+      <div className="game-over-confetti" aria-hidden="true">
+        {CONFETTI.map(([left, color, rise, rotate, delay], index) => (
+          <span
+            key={index}
+            style={{
+              left,
+              background: color,
+              '--confetti-rise': rise,
+              '--confetti-rotate': rotate,
+              animationDelay: delay,
+            }}
+          />
+        ))}
+      </div>
+
+      <div className={`game-over-card result-${copy.tone}`}>
+        <div className="game-over-kicker">{copy.kicker}</div>
+        <h2 id="game-over-title">{copy.title}</h2>
+        <p>{copy.message}</p>
+
+        <div className="game-over-score">
+          <div>
+            <span>{labels[0]}</span>
+            <strong>{scores.p1}</strong>
+          </div>
+          <div>
+            <span>{labels[1]}</span>
+            <strong>{scores.p2}</strong>
+          </div>
+        </div>
+
+        <div className="game-over-actions">
+          <button className="btn-result-primary" type="button" onClick={onNewGame}>New Game</button>
+          <button className="btn-result-secondary" type="button" onClick={onReview}>Review Board</button>
+          <button className="btn-result-ghost" type="button" onClick={onLibrary}>Library</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function getGameOverCopy(winner, mode, title = 'Game') {
+  const solo = mode === 'solo'
+  const pvp = mode === 'pvp'
+
+  if (winner === DRAW) {
+    return {
+      tone: 'draw',
+      kicker: title,
+      title: 'Draw',
+      message: 'No winner this time.',
+    }
+  }
+
+  if (winner === PLAYER_1) {
+    return {
+      tone: 'win',
+      kicker: title,
+      title: solo ? 'Solved' : pvp ? 'Player 1 Wins' : 'You Win',
+      message: solo ? 'Puzzle complete.' : 'Clean finish.',
+    }
+  }
+
+  if (winner === PLAYER_2) {
+    return {
+      tone: pvp ? 'win' : 'lose',
+      kicker: title,
+      title: pvp ? 'Player 2 Wins' : solo ? 'Game Over' : 'AI Wins',
+      message: pvp ? 'Game complete.' : 'Run it back from a fresh board.',
+    }
+  }
+
+  return {
+    tone: 'draw',
+    kicker: title,
+    title: 'Game Over',
+    message: 'Game complete.',
+  }
+}
+
 function getGameSettings(game, overrides) {
   if (!game?.options?.length) return {}
   return Object.fromEntries(game.options.map(option => [
@@ -117,4 +252,16 @@ function getGameMode(game, preferredMode) {
   if (game.modes.includes('vs-ai')) return 'pvai'
   if (game.modes.includes('local-2p')) return 'pvp'
   return preferredMode
+}
+
+function getGameFromLocation() {
+  const fromHash = window.location.hash.replace(/^#\/?/, '').replace(/^games\//, '')
+  return playableGameIds.includes(fromHash) ? fromHash : null
+}
+
+function setGameInUrl(gameId) {
+  const nextUrl = gameId
+    ? `${window.location.pathname}${window.location.search}#${gameId}`
+    : `${window.location.pathname}${window.location.search}`
+  window.history.replaceState(null, '', nextUrl)
 }

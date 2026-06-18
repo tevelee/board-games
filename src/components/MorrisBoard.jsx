@@ -95,7 +95,7 @@ const MorrisBoard = forwardRef(function MorrisBoard({ mode, difficulty, onStateC
     const movingFrom = (action.type === 'move' && !flying) ? action.from : -1
     const mill     = detectMill(newCells, placedAt, current)
 
-    if (mill) {
+    if (mill && getRemovable(newCells, current).length > 0) {
       return {
         ...s, cells: newCells, inHand: newInHand, onBoard: newOnBoard,
         mustRemove: true, lastNode: placedAt, movingFrom, busy: false,
@@ -123,6 +123,23 @@ const MorrisBoard = forwardRef(function MorrisBoard({ mode, difficulty, onStateC
     const { cells, inHand, onBoard, current, scores } = s
     const opp        = current === P1 ? P2 : P1
     const pvp        = modeRef.current === 'pvp'
+    if (!Number.isInteger(nodeIdx) || cells[nodeIdx] !== opp) {
+      if (checkWin(cells, inHand, onBoard, current)) {
+        return {
+          ...s,
+          winner: current, winMill: findWinMill(cells, current),
+          mustRemove: false, busy: false, selected: -1, movingFrom: -1,
+          scores: { ...scores, [current === P1 ? 'p1' : 'p2']: scores[current === P1 ? 'p1' : 'p2'] + 1 },
+        }
+      }
+
+      const needsAI = !pvp && opp === P2
+      return {
+        ...s,
+        current: opp, mustRemove: false, busy: needsAI, selected: -1, movingFrom: -1,
+      }
+    }
+
     const newCells   = [...cells]
     newCells[nodeIdx] = 0
     const newOnBoard  = [...onBoard]
@@ -155,6 +172,10 @@ const MorrisBoard = forwardRef(function MorrisBoard({ mode, difficulty, onStateC
     // Removal step
     if (mustRemove) {
       const removable = getRemovable(cells, current)
+      if (removable.length === 0) {
+        setGs(s => applyRemoval(s, null))
+        return
+      }
       if (!removable.includes(idx)) return
       setGs(s => applyRemoval(s, idx))
       return
