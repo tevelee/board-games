@@ -5,6 +5,20 @@ export { P1, P2 }
 export const SIZE = 7
 export const CELLS = SIZE * SIZE
 export const EMPTY = 0
+export const BLOCKED = -1
+
+export const BOARD_LAYOUTS = [
+  { id: 'classic', label: 'Classic', blocks: [] },
+  { id: 'four-square', label: 'Four Square', blocks: [[2, 2], [2, 4], [4, 2], [4, 4]] },
+  { id: 'diamond', label: 'Diamond', blocks: [[2, 3], [3, 2], [3, 4], [4, 3]] },
+  { id: 'cross', label: 'Cross', blocks: [[1, 3], [2, 3], [3, 1], [3, 2], [3, 4], [3, 5], [4, 3], [5, 3]] },
+  { id: 'gates', label: 'Gates', blocks: [[0, 3], [3, 0], [3, 6], [6, 3]] },
+  { id: 'diagonal', label: 'Diagonal', blocks: [[1, 1], [1, 5], [2, 2], [2, 4], [4, 2], [4, 4], [5, 1], [5, 5]] },
+  { id: 'ring', label: 'Ring', blocks: [[1, 2], [1, 4], [2, 1], [2, 5], [4, 1], [4, 5], [5, 2], [5, 4]] },
+  { id: 'fortress', label: 'Fortress', blocks: [[1, 1], [1, 2], [1, 4], [1, 5], [2, 1], [2, 5], [4, 1], [4, 5], [5, 1], [5, 2], [5, 4], [5, 5]] },
+]
+
+const BOARD_LAYOUTS_BY_ID = Object.fromEntries(BOARD_LAYOUTS.map(layout => [layout.id, layout]))
 
 export function idx(row, col) { return row * SIZE + col }
 export function pos(cellIdx)  { return { row: Math.floor(cellIdx / SIZE), col: cellIdx % SIZE } }
@@ -13,8 +27,17 @@ export function inBounds(row, col) {
   return row >= 0 && row < SIZE && col >= 0 && col < SIZE
 }
 
-export function makeBoard() {
+export function normalizeBoardLayoutId(value) {
+  return BOARD_LAYOUTS_BY_ID[value] ? value : BOARD_LAYOUTS[0].id
+}
+
+export function getBoardLayout(value) {
+  return BOARD_LAYOUTS_BY_ID[normalizeBoardLayoutId(value)]
+}
+
+export function makeBoard(layoutId = BOARD_LAYOUTS[0].id) {
   const board = new Array(CELLS).fill(EMPTY)
+  for (const [row, col] of getBoardLayout(layoutId).blocks) board[idx(row, col)] = BLOCKED
   board[idx(0, 0)] = P1
   board[idx(SIZE - 1, SIZE - 1)] = P1
   board[idx(0, SIZE - 1)] = P2
@@ -27,13 +50,14 @@ export function opponent(player) {
 }
 
 export function countPieces(board) {
-  let p1 = 0, p2 = 0, empty = 0
+  let p1 = 0, p2 = 0, empty = 0, blocked = 0
   for (const cell of board) {
     if (cell === P1) p1++
     else if (cell === P2) p2++
+    else if (cell === BLOCKED) blocked++
     else empty++
   }
-  return { p1, p2, empty }
+  return { p1, p2, empty, blocked }
 }
 
 export function getAdjacentCells(cellIdx) {

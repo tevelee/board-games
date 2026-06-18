@@ -6,11 +6,13 @@ import {
   SIZE,
   P1,
   P2,
+  BLOCKED,
   applyMove,
   countPieces,
   getNextTurn,
   getValidMoves,
   makeBoard,
+  normalizeBoardLayoutId,
   passTurn,
 } from './logic.js'
 
@@ -19,9 +21,11 @@ const BOARD = SIZE * CELL
 const FOOTER = 34
 const VIEW_H = BOARD + FOOTER
 
-function makeInitialState() {
+function makeInitialState(layoutId = 'classic') {
+  const normalizedLayout = normalizeBoardLayoutId(layoutId)
   return {
-    board:     makeBoard(),
+    layoutId:  normalizedLayout,
+    board:     makeBoard(normalizedLayout),
     current:   P1,
     selected:  -1,
     winner:    null,
@@ -66,8 +70,9 @@ function finalizeTurn(s, board, move, converted, movedPlayer, pvp) {
   }
 }
 
-const AtaxxGame = forwardRef(function AtaxxGame({ mode, difficulty, onStateChange }, ref) {
-  const [gs, setGs] = useState(makeInitialState)
+const AtaxxGame = forwardRef(function AtaxxGame({ mode, difficulty, settings, onStateChange }, ref) {
+  const boardLayout = normalizeBoardLayoutId(settings?.boardLayout)
+  const [gs, setGs] = useState(() => makeInitialState(boardLayout))
   const historyRef = useRef([])
 
   const { modeRef, diffRef } = useGameSync({
@@ -78,8 +83,14 @@ const AtaxxGame = forwardRef(function AtaxxGame({ mode, difficulty, onStateChang
     gs,
     setGs,
     historyRef,
-    makeInitial: makeInitialState,
+    makeInitial: () => makeInitialState(boardLayout),
   })
+
+  useEffect(() => {
+    if (gs.layoutId === boardLayout) return
+    historyRef.current = []
+    setGs(s => ({ ...makeInitialState(boardLayout), scores: s.scores }))
+  }, [boardLayout, gs.layoutId])
 
   useEffect(() => {
     if (!gs.busy) return
@@ -114,6 +125,7 @@ const AtaxxGame = forwardRef(function AtaxxGame({ mode, difficulty, onStateChang
     const { board, current, selected, winner, busy } = gs
     const pvp = modeRef.current === 'pvp'
     if (winner || busy) return
+    if (board[cellIdx] === BLOCKED) return
     if (!pvp && current === P2) return
 
     const moves = getValidMoves(board, current)
@@ -167,8 +179,10 @@ const AtaxxGame = forwardRef(function AtaxxGame({ mode, difficulty, onStateChang
       <rect width={BOARD} height={VIEW_H} fill="#0d1117" />
 
       {board.map((_, i) => {
+        const cell = board[i]
         const x = cellX(i), y = cellY(i)
         const isDark = (Math.floor(i / SIZE) + i % SIZE) % 2 === 0
+        const blocked = cell === BLOCKED
         const isTarget = targets.has(i)
         const isLastTo = lastMove?.to === i
         const isLastFrom = lastMove?.from === i && lastMove?.kind === 'jump'
@@ -177,11 +191,17 @@ const AtaxxGame = forwardRef(function AtaxxGame({ mode, difficulty, onStateChang
             <rect
               x={x + 1} y={y + 1} width={CELL - 2} height={CELL - 2}
               rx="7"
-              fill={isTarget ? `${pieceColor(current)}24` : isDark ? '#161b22' : '#1f252d'}
-              stroke={isTarget ? pieceColor(current) : isLastFrom ? '#e3b341' : '#30363d'}
+              fill={blocked ? '#322a18' : isTarget ? `${pieceColor(current)}24` : isDark ? '#161b22' : '#1f252d'}
+              stroke={blocked ? '#8b6f2d' : isTarget ? pieceColor(current) : isLastFrom ? '#e3b341' : '#30363d'}
               strokeWidth={isTarget || isLastFrom ? 2 : 1}
-              style={{ cursor: humanTurn ? 'pointer' : 'default' }}
+              style={{ cursor: humanTurn && !blocked ? 'pointer' : 'default' }}
             />
+            {blocked && (
+              <>
+                <rect x={x + 14} y={y + 14} width={CELL - 28} height={CELL - 28} rx="5" fill="#d29922" opacity="0.9" />
+                <rect x={x + 18} y={y + 18} width={CELL - 36} height={CELL - 36} rx="3" fill="#ffdf5d" opacity="0.24" />
+              </>
+            )}
             {isTarget && (
               <circle
                 cx={x + CELL / 2} cy={y + CELL / 2}
@@ -223,7 +243,7 @@ const AtaxxGame = forwardRef(function AtaxxGame({ mode, difficulty, onStateChang
       )}
 
       {board.map((piece, i) => {
-        if (!piece) return null
+        if (piece !== P1 && piece !== P2) return null
         const { x, y } = cellCenter(i)
         const color = pieceColor(piece)
         const isSelected = selected === i

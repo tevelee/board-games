@@ -3,6 +3,7 @@ import MorrisBoard from './components/MorrisBoard'
 import OthelloBoard from './components/OthelloBoard'
 import Connect4Board from './components/Connect4Board'
 import AtaxxGame from './games/ataxx/Game.jsx'
+import { BOARD_LAYOUTS as ATAXX_BOARD_LAYOUTS } from './games/ataxx/logic.js'
 import CheckersGame from './games/checkers/Game.jsx'
 import DotsBoxesGame from './games/dots-boxes/Game.jsx'
 import SudokuGame from './games/sudoku/Game.jsx'
@@ -31,6 +32,17 @@ export const playableGames = [
     ...gamesById.ataxx,
     Component: AtaxxGame,
     hint: 'Tap a piece · Clone nearby or jump two cells',
+    options: [
+      {
+        id: 'boardLayout',
+        label: 'Board',
+        defaultValue: 'classic',
+        options: ATAXX_BOARD_LAYOUTS.map(layout => ({
+          value: layout.id,
+          label: layout.label,
+        })),
+      },
+    ],
   },
   {
     ...gamesById.checkers,

@@ -27,7 +27,7 @@ Each game should eventually have:
 | Nine Men's Morris | Abstract strategy | vs AI, Local 2P | Placement, mill removal, moving/flying phases |
 | Othello | Abstract strategy | vs AI, Local 2P | Classic 8x8 disk flipping |
 | 4 in a Row | Abstract strategy | vs AI, Local 2P | Connect Four-style vertical grid |
-| Ataxx | Abstract strategy | vs AI, Local 2P | Clone, jump, and convert adjacent pieces |
+| Ataxx | Abstract strategy | vs AI, Local 2P | Clone, jump, convert adjacent pieces, and selectable obstacle boards |
 | Checkers | Abstract strategy | vs AI, Local 2P | American checkers with forced captures |
 | Dots and Boxes | Grid games | vs AI, Local 2P | Selectable 3x3 through 6x6 box grids |
 | Sudoku | Puzzle | Solo | Generated puzzles with notes, hints, and uniqueness checks |
