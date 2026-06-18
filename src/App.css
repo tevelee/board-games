@@ -1205,21 +1205,15 @@ body {
     gap: 12px;
   }
 
-  .bottom-bar {
-    height: auto;
-    min-height: calc(60px + env(safe-area-inset-bottom));
-    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-
   .scores { gap: 5px; }
   .score-chip { padding: 6px 10px; }
 
-  .bar-controls { gap: 6px; }
-
-  .select-trigger { min-width: 80px; height: 40px; font-size: 0.85rem; }
-  .btn-new { height: 40px; padding: 0 14px; font-size: 0.85rem; }
+  .select-trigger { height: 40px; font-size: 0.85rem; }
+  .btn-new {
+    height: 40px;
+    padding: 0 14px;
+    font-size: 0.85rem;
+  }
 
   .sudoku-game { padding: 12px; }
   .sudoku-board { width: min(100%, 48vh); }
@@ -1236,15 +1230,54 @@ body {
     height: auto;
     min-height: calc(60px + env(safe-area-inset-bottom));
     padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    align-items: center;
     gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .bottom-bar::-webkit-scrollbar { display: none; }
+
+  .scores {
+    flex: 0 0 auto;
   }
 
   .bar-controls {
-    flex-wrap: wrap;
-    justify-content: flex-end;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
     gap: 6px;
-    margin-left: auto;
+    margin-left: 0;
+  }
+
+  .select-wrap,
+  .action-wrap {
+    flex: 0 0 auto;
+  }
+
+  .select-trigger {
+    min-width: 88px;
+  }
+
+  .btn-new {
+    flex: 0 0 auto;
+    min-width: 124px;
+  }
+
+  .select-menu,
+  .action-menu {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: calc(74px + env(safe-area-inset-bottom));
+    z-index: 70;
+    width: auto;
+    min-width: 0;
+    max-height: min(52vh, 320px);
+    overflow-y: auto;
   }
 
   .bar-hint { display: none; }
