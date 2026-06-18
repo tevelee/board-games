@@ -434,43 +434,85 @@ body {
   margin-left: auto;
 }
 
-/* Select wrapper adds a chevron arrow */
 .select-wrap {
   position: relative;
   display: flex;
   align-items: center;
 }
-.select-wrap::after {
-  content: '';
-  position: absolute;
-  right: 9px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 0;
-  height: 0;
-  border-left: 4px solid transparent;
-  border-right: 4px solid transparent;
-  border-top: 5px solid var(--muted);
-  pointer-events: none;
-}
 
-select {
-  appearance: none;
-  -webkit-appearance: none;
-  background: #21262d;
+.select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 90px;
+  height: 38px;
+  padding: 0 12px;
   color: var(--text);
+  background: #21262d;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 0 30px 0 12px;
-  height: 38px;
+  font: inherit;
   font-size: 0.83rem;
   cursor: pointer;
   outline: none;
-  transition: border-color 0.15s;
-  min-width: 90px;
+  transition: border-color 0.15s, background 0.15s;
 }
-select:hover,
-select:focus { border-color: var(--p1); }
+.select-trigger:hover,
+.select-trigger:focus,
+.select-trigger.open {
+  border-color: var(--p1);
+  background: #262c35;
+}
+
+.select-chevron {
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid var(--muted);
+  flex-shrink: 0;
+}
+.select-trigger.open .select-chevron {
+  transform: rotate(180deg);
+}
+
+.select-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px);
+  z-index: 20;
+  min-width: 100%;
+  overflow: hidden;
+  padding: 4px;
+  background: #21262d;
+  border: 1px solid #6e7681;
+  border-radius: var(--radius);
+  box-shadow: 0 14px 30px rgba(0,0,0,0.35);
+}
+
+.select-option {
+  display: block;
+  width: 100%;
+  height: 34px;
+  padding: 0 12px;
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  border-radius: calc(var(--radius) - 2px);
+  font: inherit;
+  font-size: 0.83rem;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  outline: none;
+}
+.select-option:hover,
+.select-option:focus,
+.select-option.selected {
+  background: #58a6ff;
+  color: #0d1117;
+}
 
 .btn-new {
   background: #1a4a28;
@@ -579,13 +621,23 @@ select:focus { border-color: var(--p1); }
   100% { transform: translate(0, 0) scale(1); }
 }
 @keyframes ataxx-clone {
-  0%   { transform: scale(0.35); opacity: 0.25; }
-  70%  { transform: scale(1.15); opacity: 1; }
+  0%   { transform: scale(0.18); opacity: 0.1; }
+  55%  { transform: scale(1.22); opacity: 1; }
   100% { transform: scale(1);    opacity: 1; }
 }
 @keyframes ataxx-clone-source {
   0%, 100% { transform: scale(1); }
-  42%      { transform: scale(1.16); }
+  42%      { transform: scale(1.24); }
+}
+@keyframes ataxx-clone-link {
+  0%   { opacity: 0; stroke-dashoffset: 28; }
+  25%  { opacity: 0.55; }
+  100% { opacity: 0; stroke-dashoffset: 0; }
+}
+@keyframes ataxx-clone-seed {
+  0%   { transform: translate(0, 0) scale(0.75); opacity: 0.9; }
+  72%  { transform: translate(var(--ataxx-clone-dx), var(--ataxx-clone-dy)) scale(0.55); opacity: 0.75; }
+  100% { transform: translate(var(--ataxx-clone-dx), var(--ataxx-clone-dy)) scale(0.25); opacity: 0; }
 }
 
 .ataxx-piece,
@@ -610,6 +662,18 @@ select:focus { border-color: var(--p1); }
 }
 .ataxx-clone-source {
   animation: ataxx-clone-source 230ms ease-out;
+}
+.ataxx-clone-trail {
+  pointer-events: none;
+}
+.ataxx-clone-link {
+  stroke-dasharray: 7 7;
+  animation: ataxx-clone-link 360ms ease-out forwards;
+}
+.ataxx-clone-seed {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ataxx-clone-seed 360ms ease-out forwards;
 }
 
 /* ── Mobile tweaks ───────────────────────────────────────────────────────── */
@@ -666,7 +730,7 @@ select:focus { border-color: var(--p1); }
 
   .bar-controls { gap: 6px; }
 
-  select { min-width: 80px; height: 40px; font-size: 0.85rem; }
+  .select-trigger { min-width: 80px; height: 40px; font-size: 0.85rem; }
   .btn-new { height: 40px; padding: 0 14px; font-size: 0.85rem; }
 
   .hint { display: none; }
@@ -674,5 +738,5 @@ select:focus { border-color: var(--p1); }
 
 @media (max-width: 360px) {
   .score-label { display: none; }
-  select { min-width: 72px; }
+  .select-trigger { min-width: 72px; }
 }

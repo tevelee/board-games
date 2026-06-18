@@ -1,3 +1,75 @@
+import { useEffect, useRef, useState } from 'react'
+
+function SelectMenu({ label, value, options, onChange }) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef(null)
+  const selected = options.find(option => option.value === value) ?? options[0]
+
+  useEffect(() => {
+    if (!open) return
+    function handlePointerDown(event) {
+      if (!rootRef.current?.contains(event.target)) setOpen(false)
+    }
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    window.addEventListener('pointerdown', handlePointerDown)
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('pointerdown', handlePointerDown)
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [open])
+
+  return (
+    <div className="select-wrap" ref={rootRef}>
+      <button
+        className={`select-trigger${open ? ' open' : ''}`}
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={label}
+        onClick={() => setOpen(value => !value)}
+      >
+        <span>{selected.label}</span>
+        <span className="select-chevron" aria-hidden="true" />
+      </button>
+
+      {open && (
+        <div className="select-menu" role="listbox" aria-label={label}>
+          {options.map(option => (
+            <button
+              key={option.value}
+              className={`select-option${option.value === value ? ' selected' : ''}`}
+              type="button"
+              role="option"
+              aria-selected={option.value === value}
+              onClick={() => {
+                onChange(option.value)
+                setOpen(false)
+              }}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const MODE_OPTIONS = [
+  { value: 'pvai', label: 'vs AI' },
+  { value: 'pvp', label: 'vs Player' },
+]
+
+const DIFFICULTY_OPTIONS = [
+  { value: 'easy', label: 'Easy' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'hard', label: 'Hard' },
+  { value: 'expert', label: 'Expert' },
+]
+
 export default function BottomBar({
   mode, difficulty, scores,
   onModeChange, onDifficultyChange, onNewGame,
@@ -22,22 +94,20 @@ export default function BottomBar({
       </div>
 
       <div className="bar-controls">
-        <div className="select-wrap">
-          <select value={mode} onChange={e => onModeChange(e.target.value)} aria-label="Game mode">
-            <option value="pvai">vs AI</option>
-            <option value="pvp">vs Player</option>
-          </select>
-        </div>
+        <SelectMenu
+          label="Game mode"
+          value={mode}
+          options={MODE_OPTIONS}
+          onChange={onModeChange}
+        />
 
         {!pvp && (
-          <div className="select-wrap">
-            <select value={difficulty} onChange={e => onDifficultyChange(e.target.value)} aria-label="Difficulty">
-              <option value="easy">Easy</option>
-              <option value="medium">Medium</option>
-              <option value="hard">Hard</option>
-              <option value="expert">Expert</option>
-            </select>
-          </div>
+          <SelectMenu
+            label="Difficulty"
+            value={difficulty}
+            options={DIFFICULTY_OPTIONS}
+            onChange={onDifficultyChange}
+          />
         )}
 
         {showUndo && (

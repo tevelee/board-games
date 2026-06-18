@@ -150,6 +150,13 @@ const AtaxxGame = forwardRef(function AtaxxGame({ mode, difficulty, onStateChang
   )
   const convertedSet = new Set(converted)
   const { p1, p2, empty } = countPieces(board)
+  const cloneTrail = lastMove?.kind === 'clone'
+    ? {
+        from: cellCenter(lastMove.from),
+        to:   cellCenter(lastMove.to),
+        color: pieceColor(board[lastMove.to]),
+      }
+    : null
 
   return (
     <svg
@@ -193,6 +200,28 @@ const AtaxxGame = forwardRef(function AtaxxGame({ mode, difficulty, onStateChang
         )
       })}
 
+      {cloneTrail && (
+        <g
+          className="ataxx-clone-trail"
+          transform={`translate(${cloneTrail.from.x} ${cloneTrail.from.y})`}
+          style={{
+            '--ataxx-clone-dx': `${cloneTrail.to.x - cloneTrail.from.x}px`,
+            '--ataxx-clone-dy': `${cloneTrail.to.y - cloneTrail.from.y}px`,
+          }}
+        >
+          <line
+            className="ataxx-clone-link"
+            x1="0" y1="0"
+            x2={cloneTrail.to.x - cloneTrail.from.x}
+            y2={cloneTrail.to.y - cloneTrail.from.y}
+            stroke={cloneTrail.color}
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
+          <circle className="ataxx-clone-seed" r="9" fill={cloneTrail.color} />
+        </g>
+      )}
+
       {board.map((piece, i) => {
         if (!piece) return null
         const { x, y } = cellCenter(i)
@@ -222,22 +251,24 @@ const AtaxxGame = forwardRef(function AtaxxGame({ mode, difficulty, onStateChang
         return (
           <g
             key={`piece-${i}-${piece}`}
-            className={pieceClass}
+            transform={`translate(${x} ${y})`}
             onClick={() => handleCellClick(i)}
-            style={{ ...moveStyle, cursor: humanTurn && canSelect ? 'pointer' : 'default' }}
+            style={{ cursor: humanTurn && canSelect ? 'pointer' : 'default' }}
           >
-            {canSelect && humanTurn && (
-              <circle cx={x} cy={y} r="22" fill="none" stroke={color} strokeWidth="1.5" opacity="0.38" />
-            )}
-            {isSelected && (
-              <circle cx={x} cy={y} r="24" fill="none" stroke="#e3b341" strokeWidth="2.5" />
-            )}
-            <circle
-              cx={x} cy={y} r="17"
-              fill={color}
-              style={{ filter: isSelected ? `drop-shadow(0 0 9px ${color})` : `drop-shadow(0 0 3px ${color}88)` }}
-            />
-            <circle cx={x - 5} cy={y - 5} r="5" fill="rgba(255,255,255,0.25)" />
+            <g className={pieceClass} style={moveStyle}>
+              {canSelect && humanTurn && (
+                <circle r="22" fill="none" stroke={color} strokeWidth="1.5" opacity="0.38" />
+              )}
+              {isSelected && (
+                <circle r="24" fill="none" stroke="#e3b341" strokeWidth="2.5" />
+              )}
+              <circle
+                r="17"
+                fill={color}
+                style={{ filter: isSelected ? `drop-shadow(0 0 9px ${color})` : `drop-shadow(0 0 3px ${color}88)` }}
+              />
+              <circle cx="-5" cy="-5" r="5" fill="rgba(255,255,255,0.25)" />
+            </g>
           </g>
         )
       })}
