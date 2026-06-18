@@ -11,6 +11,13 @@
   --text:    #e6edf3;
   --muted:   #8b949e;
   --radius:  8px;
+  --app-viewport-height: 100vh;
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --app-viewport-height: 100dvh;
+  }
 }
 
 html, body, #root {
@@ -25,17 +32,16 @@ body {
   -webkit-font-smoothing: antialiased;
   user-select: none;
   -webkit-user-select: none;
-  /* Pull content under notch/dynamic island */
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* ── Layout shell ────────────────────────────────────────────────────────── */
 .app {
   display: flex;
   flex-direction: column;
-  height: 100dvh;
-  height: 100vh; /* fallback */
+  width: 100%;
+  height: var(--app-height, var(--app-viewport-height));
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* ── Header ──────────────────────────────────────────────────────────────── */
@@ -44,8 +50,8 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 0 16px;
-  height: 52px;
+  padding: env(safe-area-inset-top) 16px 0;
+  height: calc(52px + env(safe-area-inset-top));
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
@@ -537,8 +543,8 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 0 16px;
-  height: 60px;
+  padding: 0 16px env(safe-area-inset-bottom);
+  height: calc(60px + env(safe-area-inset-bottom));
   background: var(--surface);
   border-top: 1px solid var(--border);
   flex-shrink: 0;
@@ -1135,7 +1141,10 @@ body {
 
 /* ── Mobile tweaks ───────────────────────────────────────────────────────── */
 @media (max-width: 480px) {
-  .header { height: 48px; padding: 0 12px; }
+  .header {
+    height: calc(48px + env(safe-area-inset-top));
+    padding: env(safe-area-inset-top) 12px 0;
+  }
   .header-center { justify-content: flex-start; }
   .library-btn { padding: 0 9px; }
   .active-game-title { font-size: 0.8rem; }
@@ -1198,8 +1207,8 @@ body {
 
   .bottom-bar {
     height: auto;
-    min-height: 60px;
-    padding: 10px 12px;
+    min-height: calc(60px + env(safe-area-inset-bottom));
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
     flex-wrap: wrap;
     gap: 10px;
   }
@@ -1225,8 +1234,8 @@ body {
 @media (max-width: 720px) {
   .bottom-bar {
     height: auto;
-    min-height: 60px;
-    padding: 10px 12px;
+    min-height: calc(60px + env(safe-area-inset-bottom));
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
     flex-wrap: wrap;
     gap: 10px;
   }

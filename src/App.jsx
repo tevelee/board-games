@@ -23,6 +23,8 @@ const CONFETTI = [
 ]
 
 export default function App() {
+  useVisualViewportHeight()
+
   const [game,        setGame]        = useState(() => getGameFromLocation())
   const [mode,        setMode]        = useState('pvai')
   const [difficulty,  setDifficulty]  = useState('medium')
@@ -147,6 +149,31 @@ export default function App() {
       )}
     </div>
   )
+}
+
+function useVisualViewportHeight() {
+  useEffect(() => {
+    const viewport = window.visualViewport
+
+    function updateAppHeight() {
+      const height = viewport?.height ?? window.innerHeight
+      document.documentElement.style.setProperty('--app-height', `${height}px`)
+    }
+
+    updateAppHeight()
+    window.addEventListener('resize', updateAppHeight)
+    window.addEventListener('orientationchange', updateAppHeight)
+    viewport?.addEventListener('resize', updateAppHeight)
+    viewport?.addEventListener('scroll', updateAppHeight)
+
+    return () => {
+      window.removeEventListener('resize', updateAppHeight)
+      window.removeEventListener('orientationchange', updateAppHeight)
+      viewport?.removeEventListener('resize', updateAppHeight)
+      viewport?.removeEventListener('scroll', updateAppHeight)
+      document.documentElement.style.removeProperty('--app-height')
+    }
+  }, [])
 }
 
 function GameOverOverlay({ copy, scores, scoreLabels, mode, onNewGame, onReview, onLibrary }) {
