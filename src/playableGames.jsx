@@ -3,6 +3,7 @@ import MorrisBoard from './components/MorrisBoard'
 import OthelloBoard from './components/OthelloBoard'
 import Connect4Board from './components/Connect4Board'
 import AtaxxGame from './games/ataxx/Game.jsx'
+import CheckersGame from './games/checkers/Game.jsx'
 import { gamesById } from './gameRegistry.js'
 
 export const playableGames = [
@@ -30,6 +31,12 @@ export const playableGames = [
     Component: AtaxxGame,
     hint: 'Tap a piece · Clone nearby or jump two cells',
     hintClassName: 'ataxx-hint',
+  },
+  {
+    ...gamesById.checkers,
+    Component: CheckersGame,
+    hint: 'Captures are forced · Chain jumps continue',
+    hintClassName: 'checkers-hint',
   },
 ]
 

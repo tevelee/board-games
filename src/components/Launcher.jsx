@@ -216,7 +216,7 @@ export default function Launcher({ onLaunch }) {
     return games
       .filter(game => {
         if (q) {
-          const haystack = [game.title, game.category, game.complexity, game.duration, ...game.tags, ...game.modes].join(' ').toLowerCase()
+          const haystack = [game.title, game.category, game.complexity, game.duration, ...(game.aliases ?? []), ...game.tags, ...game.modes].join(' ').toLowerCase()
           if (!haystack.includes(q)) return false
         }
         return activeFilters.every(filter => gameMatchesFilter(game, filter))

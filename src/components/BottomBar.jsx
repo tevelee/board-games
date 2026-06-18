@@ -58,6 +58,59 @@ function SelectMenu({ label, value, options, onChange }) {
   )
 }
 
+function ActionMenu({ canUndo, onUndo }) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef(null)
+
+  useEffect(() => {
+    if (!open) return
+    function handlePointerDown(event) {
+      if (!rootRef.current?.contains(event.target)) setOpen(false)
+    }
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    window.addEventListener('pointerdown', handlePointerDown)
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('pointerdown', handlePointerDown)
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [open])
+
+  return (
+    <div className="action-wrap" ref={rootRef}>
+      <button
+        className={`btn-more${open ? ' open' : ''}`}
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="More actions"
+        onClick={() => setOpen(value => !value)}
+      >
+        <span aria-hidden="true">...</span>
+      </button>
+
+      {open && (
+        <div className="action-menu" role="menu" aria-label="More actions">
+          <button
+            className="action-option"
+            type="button"
+            role="menuitem"
+            disabled={!canUndo}
+            onClick={() => {
+              onUndo()
+              setOpen(false)
+            }}
+          >
+            Undo move
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 const MODE_OPTIONS = [
   { value: 'pvai', label: 'vs AI' },
   { value: 'pvp', label: 'vs Player' },
@@ -73,7 +126,7 @@ const DIFFICULTY_OPTIONS = [
 export default function BottomBar({
   mode, difficulty, scores,
   onModeChange, onDifficultyChange, onNewGame,
-  showUndo, canUndo, onUndo,
+  canUndo, onUndo,
 }) {
   const pvp = mode === 'pvp'
 
@@ -110,9 +163,7 @@ export default function BottomBar({
           />
         )}
 
-        {showUndo && (
-          <button className="btn-undo" onClick={onUndo} disabled={!canUndo}>↩ Undo</button>
-        )}
+        <ActionMenu canUndo={canUndo} onUndo={onUndo} />
         <button className="btn-new" onClick={onNewGame}>New Game</button>
       </div>
     </div>

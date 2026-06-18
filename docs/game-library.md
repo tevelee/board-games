@@ -28,16 +28,16 @@ Each game should eventually have:
 | Othello | Abstract strategy | vs AI, Local 2P | Classic 8x8 disk flipping |
 | 4 in a Row | Abstract strategy | vs AI, Local 2P | Connect Four-style vertical grid |
 | Ataxx | Abstract strategy | vs AI, Local 2P | Clone, jump, and convert adjacent pieces |
+| Checkers | Abstract strategy | vs AI, Local 2P | American checkers with forced captures |
 
 ## Planned Game Candidates
 
 | Game | Category | Likely Modes | Notes |
 | --- | --- | --- | --- |
-| Checkers | Abstract strategy | vs AI, Local 2P | American checkers |
 | Dots and Boxes | Grid games | vs AI, Local 2P | Good for simple AI and local play |
 | Tic Tac Toe | Grid games | vs AI, Local 2P | Fast baseline game |
 | Ultimate Tic-Tac-Toe | Grid games | vs AI, Local 2P | Strategic tic-tac-toe variant |
-| Eltunos Tic Tac Toe | Custom variants | vs AI, Local 2P | Needs rule definition |
+| Vanishing Tic Tac Toe | Grid games | vs AI, Local 2P | Also known as Tic Tac Toe Disappear or XOGone |
 | Nonogram | Puzzle | Solo | Could support generated puzzles |
 | Backgammon | Race/table games | vs AI, Local 2P | Dice, bearing off, doubling later |
 | Threes / 2048 | Puzzle | Solo | Swipe/merge grid |

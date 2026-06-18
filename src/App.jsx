@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import Header from './components/Header'
 import BottomBar from './components/BottomBar'
 import Launcher from './components/Launcher'
@@ -7,10 +7,6 @@ import { createGameUiState, deriveStatus } from './game/runtime.js'
 import { playableGameIds, playableGamesById } from './playableGames.jsx'
 
 export default function App() {
-  const showUndo = useMemo(
-    () => new URLSearchParams(window.location.search).has('undo'), []
-  )
-
   const [game,        setGame]        = useState(null)
   const [mode,        setMode]        = useState('pvai')
   const [difficulty,  setDifficulty]  = useState('medium')
@@ -76,7 +72,6 @@ export default function App() {
           onModeChange={handleModeChange}
           onDifficultyChange={setDifficulty}
           onNewGame={handleNewGame}
-          showUndo={showUndo}
           canUndo={!uiState.busy && uiState.historyLen > 0}
           onUndo={handleUndo}
         />
