@@ -58,7 +58,7 @@ function SelectMenu({ label, value, options, onChange }) {
   )
 }
 
-function ActionMenu({ canUndo, onUndo }) {
+function ActionMenu({ onUndo }) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef(null)
 
@@ -97,9 +97,8 @@ function ActionMenu({ canUndo, onUndo }) {
             className="action-option"
             type="button"
             role="menuitem"
-            disabled={!canUndo}
             onClick={() => {
-              onUndo()
+              onUndo?.()
               setOpen(false)
             }}
           >
@@ -132,7 +131,7 @@ export default function BottomBar({
   mode, difficulty, scores, hint,
   gameModes = [], scoreLabels, gameOptions = [], gameSettings = {}, onGameSettingChange,
   onModeChange, onDifficultyChange, onNewGame,
-  canUndo, onUndo,
+  onUndo,
 }) {
   const solo = mode === 'solo'
   const pvp = mode === 'pvp'
@@ -190,7 +189,7 @@ export default function BottomBar({
           />
         )}
 
-        <ActionMenu canUndo={canUndo} onUndo={onUndo} />
+        <ActionMenu onUndo={onUndo} />
         <button className="btn-new" onClick={onNewGame}>New Game</button>
       </div>
     </div>

@@ -48,8 +48,10 @@ Imperative ref:
 }
 ```
 
-`undo()` may be a no-op for games that do not support undo yet, but the method
-should exist once the game is registered as playable.
+`undo()` is required for every playable game. It should restore the previous
+human-visible state from local history and cancel or guard any pending AI work
+so stale turns cannot apply after the rollback. Calling `undo()` with an empty
+history stack may be a no-op.
 
 ## Shell UI State
 
@@ -73,7 +75,8 @@ Fields:
 - `busy`: true while an AI turn or animation should block input
 - `scores`: cumulative score for the current game
 - `passed`: optional, used by pass-based games such as Othello or Go
-- `historyLen`: number of undoable human-visible steps
+- `historyLen`: number of undoable human-visible steps; this should come from
+  the same local history stack used by `undo()`
 
 Use `src/game/runtime.js` for constants and normalization helpers.
 
@@ -144,7 +147,8 @@ array in its playable registry entry and read the selected values from
 Before marking a game playable:
 
 - It can reset cleanly.
-- It reports status, scores, busy state, and undo availability.
+- It reports status, scores, busy state, and history length.
+- It supports undo through a local history stack.
 - It handles both mobile and desktop input.
 - It has visible legal-move or selected-state feedback where useful.
 - It cannot accept input while the AI is thinking.

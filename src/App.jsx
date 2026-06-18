@@ -143,7 +143,6 @@ export default function App() {
           onModeChange={handleModeChange}
           onDifficultyChange={setDifficulty}
           onNewGame={handleNewGame}
-          canUndo={!uiState.busy && uiState.historyLen > 0}
           onUndo={handleUndo}
         />
       )}
