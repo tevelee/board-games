@@ -159,7 +159,7 @@ const Connect4Board = forwardRef(function Connect4Board({ mode, difficulty, onSt
       {/* Win line ring highlights (on top of overlay) */}
       {winSet && board.map((row, r) => row.map((cell, c) => {
         if (!winSet.has(r * COLS + c)) return null
-        const color = cell === P1 ? p1Color : p2Color
+        const color = cell === P1 ? P1_COLOR : P2_COLOR
         return (
           <circle key={`win-${r}-${c}`} className="c4-win-piece"
             cx={colX(c)} cy={rowY(r)} r={R}
