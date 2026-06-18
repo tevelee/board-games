@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react'
 import GameCanvas from './components/GameCanvas'
 import MorrisBoard from './components/MorrisBoard'
+import OthelloBoard from './components/OthelloBoard'
 import Header from './components/Header'
 import BottomBar from './components/BottomBar'
 import { HUMAN, BOT } from './game/gomoku/logic'
@@ -10,15 +11,23 @@ const INIT_STATE = {
   winner:  null,
   busy:    false,
   scores:  { p1: 0, p2: 0 },
+  passed:  false,
 }
 
 function deriveStatus(uiState, mode) {
-  const { current, winner, busy } = uiState
+  const { current, winner, busy, passed } = uiState
   const pvp = mode === 'pvp'
-  if (winner === HUMAN) return [pvp ? 'Player 1 wins! 🎉' : 'You win! 🎉', 'win']
-  if (winner === BOT)   return [pvp ? 'Player 2 wins! 🎉' : 'AI wins!',    pvp ? 'win' : 'lose']
-  if (busy)             return ['Thinking…', 'muted']
-  if (pvp)              return current === HUMAN ? ["Player 1's turn", 'p1'] : ["Player 2's turn", 'p2']
+  if (winner === HUMAN)  return [pvp ? 'Player 1 wins! 🎉' : 'You win! 🎉',  'win']
+  if (winner === BOT)    return [pvp ? 'Player 2 wins! 🎉' : 'AI wins!',     pvp ? 'win' : 'lose']
+  if (winner === 'draw') return ['Draw!', 'muted']
+  if (busy)              return ['Thinking…', 'muted']
+  if (passed) {
+    const passer = current === HUMAN
+      ? (pvp ? 'Player 2' : 'AI')
+      : (pvp ? 'Player 1' : 'You')
+    return [`${passer} passed`, 'muted']
+  }
+  if (pvp) return current === HUMAN ? ["Player 1's turn", 'p1'] : ["Player 2's turn", 'p2']
   return ['Your turn', 'p1']
 }
 
@@ -28,12 +37,18 @@ export default function App() {
   const [difficulty, setDifficulty] = useState('medium')
   const [gomokuUI,   setGomokuUI]   = useState(INIT_STATE)
   const [morrisUI,   setMorrisUI]   = useState(INIT_STATE)
-  const gomokuRef = useRef(null)
-  const morrisRef = useRef(null)
+  const [othelloUI,  setOthelloUI]  = useState(INIT_STATE)
+  const gomokuRef  = useRef(null)
+  const morrisRef  = useRef(null)
+  const othelloRef = useRef(null)
 
-  const uiState  = game === 'gomoku' ? gomokuUI  : morrisUI
-  const setUI    = game === 'gomoku' ? setGomokuUI : setMorrisUI
-  const activeRef = game === 'gomoku' ? gomokuRef : morrisRef
+  const refs  = { gomoku: gomokuRef,  morris: morrisRef,  othello: othelloRef }
+  const setUIs = { gomoku: setGomokuUI, morris: setMorrisUI, othello: setOthelloUI }
+  const uis    = { gomoku: gomokuUI,  morris: morrisUI,   othello: othelloUI }
+
+  const uiState   = uis[game]
+  const activeRef = refs[game]
+  const setUI     = setUIs[game]
 
   const handleNewGame = useCallback(() => {
     activeRef.current?.reset()
@@ -54,6 +69,23 @@ export default function App() {
 
   const [statusText, statusClass] = deriveStatus(uiState, mode)
 
+  function gameLayer(name, children) {
+    return (
+      <div key={name} className="game-layer" style={{
+        visibility:    game === name ? 'visible' : 'hidden',
+        pointerEvents: game === name ? 'auto'    : 'none',
+      }}>
+        {children}
+        {game === name && name === 'gomoku' && (
+          <div className="hint">Drag · Pinch/scroll to zoom · Tap to place</div>
+        )}
+        {game === name && name === 'morris' && (
+          <div className="hint morris-hint">Tap a node to place · Tap piece then target to move</div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="app">
       <Header
@@ -64,35 +96,15 @@ export default function App() {
       />
 
       <div className="canvas-wrap">
-        <div className="game-layer" style={{
-          visibility: game === 'gomoku' ? 'visible' : 'hidden',
-          pointerEvents: game === 'gomoku' ? 'auto' : 'none',
-        }}>
-          <GameCanvas
-            ref={gomokuRef}
-            mode={mode}
-            difficulty={difficulty}
-            onStateChange={setGomokuUI}
-          />
-          {game === 'gomoku' && (
-            <div className="hint">Drag · Pinch/scroll to zoom · Tap to place</div>
-          )}
-        </div>
-
-        <div className="game-layer" style={{
-          visibility: game === 'morris' ? 'visible' : 'hidden',
-          pointerEvents: game === 'morris' ? 'auto' : 'none',
-        }}>
-          <MorrisBoard
-            ref={morrisRef}
-            mode={mode}
-            difficulty={difficulty}
-            onStateChange={setMorrisUI}
-          />
-          {game === 'morris' && (
-            <div className="hint morris-hint">Tap a node to place · Tap piece then target to move</div>
-          )}
-        </div>
+        {gameLayer('gomoku',
+          <GameCanvas ref={gomokuRef} mode={mode} difficulty={difficulty} onStateChange={setGomokuUI} />
+        )}
+        {gameLayer('morris',
+          <MorrisBoard ref={morrisRef} mode={mode} difficulty={difficulty} onStateChange={setMorrisUI} />
+        )}
+        {gameLayer('othello',
+          <OthelloBoard ref={othelloRef} mode={mode} difficulty={difficulty} onStateChange={setOthelloUI} />
+        )}
       </div>
 
       <BottomBar
