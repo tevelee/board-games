@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react'
 import GameCanvas from './components/GameCanvas'
 import MorrisBoard from './components/MorrisBoard'
 import OthelloBoard from './components/OthelloBoard'
+import Connect4Board from './components/Connect4Board'
 import Header from './components/Header'
 import BottomBar from './components/BottomBar'
 import { HUMAN, BOT } from './game/gomoku/logic'
@@ -32,19 +33,21 @@ function deriveStatus(uiState, mode) {
 }
 
 export default function App() {
-  const [game,       setGame]       = useState('gomoku')
-  const [mode,       setMode]       = useState('pvai')
-  const [difficulty, setDifficulty] = useState('medium')
-  const [gomokuUI,   setGomokuUI]   = useState(INIT_STATE)
-  const [morrisUI,   setMorrisUI]   = useState(INIT_STATE)
-  const [othelloUI,  setOthelloUI]  = useState(INIT_STATE)
-  const gomokuRef  = useRef(null)
-  const morrisRef  = useRef(null)
-  const othelloRef = useRef(null)
+  const [game,        setGame]        = useState('gomoku')
+  const [mode,        setMode]        = useState('pvai')
+  const [difficulty,  setDifficulty]  = useState('medium')
+  const [gomokuUI,    setGomokuUI]    = useState(INIT_STATE)
+  const [morrisUI,    setMorrisUI]    = useState(INIT_STATE)
+  const [othelloUI,   setOthelloUI]   = useState(INIT_STATE)
+  const [connect4UI,  setConnect4UI]  = useState(INIT_STATE)
+  const gomokuRef   = useRef(null)
+  const morrisRef   = useRef(null)
+  const othelloRef  = useRef(null)
+  const connect4Ref = useRef(null)
 
-  const refs  = { gomoku: gomokuRef,  morris: morrisRef,  othello: othelloRef }
-  const setUIs = { gomoku: setGomokuUI, morris: setMorrisUI, othello: setOthelloUI }
-  const uis    = { gomoku: gomokuUI,  morris: morrisUI,   othello: othelloUI }
+  const refs   = { gomoku: gomokuRef,  morris: morrisRef,  othello: othelloRef,  connect4: connect4Ref }
+  const setUIs = { gomoku: setGomokuUI, morris: setMorrisUI, othello: setOthelloUI, connect4: setConnect4UI }
+  const uis    = { gomoku: gomokuUI,   morris: morrisUI,   othello: othelloUI,   connect4: connect4UI }
 
   const uiState   = uis[game]
   const activeRef = refs[game]
@@ -104,6 +107,9 @@ export default function App() {
         )}
         {gameLayer('othello',
           <OthelloBoard ref={othelloRef} mode={mode} difficulty={difficulty} onStateChange={setOthelloUI} />
+        )}
+        {gameLayer('connect4',
+          <Connect4Board ref={connect4Ref} mode={mode} difficulty={difficulty} onStateChange={setConnect4UI} />
         )}
       </div>
 
