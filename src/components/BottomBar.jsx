@@ -125,6 +125,7 @@ const DIFFICULTY_OPTIONS = [
 
 export default function BottomBar({
   mode, difficulty, scores, hint,
+  gameOptions = [], gameSettings = {}, onGameSettingChange,
   onModeChange, onDifficultyChange, onNewGame,
   canUndo, onUndo,
 }) {
@@ -151,6 +152,16 @@ export default function BottomBar({
       </div>
 
       <div className="bar-controls">
+        {gameOptions.map(option => (
+          <SelectMenu
+            key={option.id}
+            label={option.label}
+            value={gameSettings[option.id] ?? option.defaultValue ?? option.options[0]?.value}
+            options={option.options}
+            onChange={value => onGameSettingChange?.(option.id, value)}
+          />
+        ))}
+
         <SelectMenu
           label="Game mode"
           value={mode}

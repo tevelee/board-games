@@ -29,12 +29,12 @@ Each game should eventually have:
 | 4 in a Row | Abstract strategy | vs AI, Local 2P | Connect Four-style vertical grid |
 | Ataxx | Abstract strategy | vs AI, Local 2P | Clone, jump, and convert adjacent pieces |
 | Checkers | Abstract strategy | vs AI, Local 2P | American checkers with forced captures |
+| Dots and Boxes | Grid games | vs AI, Local 2P | Selectable 3x3 through 6x6 box grids |
 
 ## Planned Game Candidates
 
 | Game | Category | Likely Modes | Notes |
 | --- | --- | --- | --- |
-| Dots and Boxes | Grid games | vs AI, Local 2P | Good for simple AI and local play |
 | Tic Tac Toe | Grid games | vs AI, Local 2P | Fast baseline game |
 | Ultimate Tic-Tac-Toe | Grid games | vs AI, Local 2P | Strategic tic-tac-toe variant |
 | Vanishing Tic Tac Toe | Grid games | vs AI, Local 2P | Also known as Tic Tac Toe Disappear or XOGone |

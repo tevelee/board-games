@@ -93,7 +93,7 @@ export const games = [
     id: 'dots-boxes',
     title: 'Dots and Boxes',
     category: 'Grid Games',
-    status: 'planned',
+    status: 'playable',
     modes: ['vs-ai', 'local-2p'],
     tags: ['grid', 'turn-based', 'quick'],
     complexity: 'Light',

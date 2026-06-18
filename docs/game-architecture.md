@@ -29,13 +29,14 @@ Each game owns:
 Every playable game component must be a `forwardRef` component that accepts:
 
 ```jsx
-function SomeGame({ mode, difficulty, onStateChange }, ref)
+function SomeGame({ mode, difficulty, settings, onStateChange }, ref)
 ```
 
 Props:
 
 - `mode`: `'pvai'` or `'pvp'`
 - `difficulty`: `'easy' | 'medium' | 'hard' | 'expert'`
+- `settings`: optional game-specific values declared in the catalog entry
 - `onStateChange(uiState)`: reports the shell-facing state snapshot
 
 Imperative ref:
@@ -99,10 +100,13 @@ To add a game to the library:
 1. Add catalog metadata to `src/gameRegistry.js`.
 2. Implement the game component contract.
 3. Add the component to `src/playableGames.jsx`.
-4. Add or reuse a launcher tile graphic in `Launcher`.
+4. Add or reuse a launcher tile graphic in `GameThumbnail`.
 5. Run `npm run build`.
 
 `App.jsx`, `Header.jsx`, and `BottomBar.jsx` should not need per-game edits.
+When a game needs selectable variants such as board size, declare an `options`
+array in its playable registry entry and read the selected values from
+`settings`.
 
 ## Logic Guidelines
 

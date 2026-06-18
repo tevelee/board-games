@@ -14,8 +14,8 @@ src/games/<game-id>/
 Minimum steps:
 
 1. Add metadata in `src/gameRegistry.js`.
-2. Build a `forwardRef` game component with props `mode`, `difficulty`, and
-   `onStateChange`.
+2. Build a `forwardRef` game component with props `mode`, `difficulty`,
+   optional `settings`, and `onStateChange`.
 3. Expose `reset()` and `undo()` through the ref.
 4. Register the component in `src/playableGames.jsx`.
 5. Run `npm run build`.

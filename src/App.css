@@ -757,6 +757,22 @@ body {
   animation: checkers-captured 260ms ease-out forwards;
 }
 
+/* ── Dots and Boxes feedback ────────────────────────────────────────────── */
+@keyframes dots-edge-claim {
+  0%   { stroke-dasharray: 1 12; stroke-dashoffset: 18; opacity: 0.35; }
+  100% { stroke-dasharray: 80 0; stroke-dashoffset: 0; opacity: 1; }
+}
+
+.dots-last-edge {
+  animation: dots-edge-claim 220ms ease-out;
+}
+
+.dots-completed-box {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: piece-pop 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
 /* ── Mobile tweaks ───────────────────────────────────────────────────────── */
 @media (max-width: 480px) {
   .header { height: 48px; padding: 0 12px; }
@@ -818,6 +834,21 @@ body {
 }
 
 @media (max-width: 720px) {
+  .bottom-bar {
+    height: auto;
+    min-height: 60px;
+    padding: 10px 12px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .bar-controls {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-left: auto;
+  }
+
   .bar-hint { display: none; }
 }
 

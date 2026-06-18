@@ -10,6 +10,7 @@ const GameHost = forwardRef(function GameHost({
   activeGameId,
   mode,
   difficulty,
+  settings,
   onActiveStateChange,
 }, ref) {
   const gameRefs = useRef({})
@@ -65,6 +66,7 @@ const GameHost = forwardRef(function GameHost({
             ref={instance => setGameRef(id, instance)}
             mode={mode}
             difficulty={difficulty}
+            settings={activeGameId === id ? settings : undefined}
             onStateChange={state => handleGameStateChange(id, state)}
           />
         </div>

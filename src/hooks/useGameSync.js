@@ -5,6 +5,7 @@ export function useGameSync({
   ref, mode, difficulty, onStateChange,
   gs, setGs, historyRef, makeInitial,
   onExtraReset,
+  preserveScores = true,
 }) {
   const modeRef  = useRef(mode)
   const diffRef  = useRef(difficulty)
@@ -28,7 +29,10 @@ export function useGameSync({
   useImperativeHandle(ref, () => ({
     reset() {
       historyRef.current = []
-      setGs(s => ({ ...makeInitial(), scores: s.scores }))
+      setGs(s => {
+        const next = makeInitial()
+        return preserveScores ? { ...next, scores: s.scores } : next
+      })
       onExtraReset?.()
     },
     undo() {
