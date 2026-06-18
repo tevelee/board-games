@@ -36,12 +36,14 @@ export function normalizeGameUiState(next = {}, previous = DEFAULT_GAME_UI) {
 
 export function deriveStatus(uiState, mode) {
   const { current, winner, busy, passed } = createGameUiState(uiState)
+  const solo = mode === 'solo'
   const pvp = mode === 'pvp'
 
-  if (winner === PLAYER_1) return [pvp ? 'Player 1 wins!' : 'You win!', 'win']
-  if (winner === PLAYER_2) return [pvp ? 'Player 2 wins!' : 'AI wins!', pvp ? 'win' : 'lose']
+  if (winner === PLAYER_1) return [solo ? 'Solved!' : pvp ? 'Player 1 wins!' : 'You win!', 'win']
+  if (winner === PLAYER_2) return [solo ? 'Game over' : pvp ? 'Player 2 wins!' : 'AI wins!', pvp ? 'win' : 'lose']
   if (winner === DRAW)     return ['Draw!', 'muted']
   if (busy)                return ['Thinking...', 'muted']
+  if (solo)                return ['Solving', 'p1']
   if (passed) {
     const passer = current === PLAYER_1
       ? (pvp ? 'Player 2' : 'AI')

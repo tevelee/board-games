@@ -34,7 +34,7 @@ function SomeGame({ mode, difficulty, settings, onStateChange }, ref)
 
 Props:
 
-- `mode`: `'pvai'` or `'pvp'`
+- `mode`: `'solo'`, `'pvai'`, or `'pvp'`
 - `difficulty`: `'easy' | 'medium' | 'hard' | 'expert'`
 - `settings`: optional game-specific values declared in the catalog entry
 - `onStateChange(uiState)`: reports the shell-facing state snapshot

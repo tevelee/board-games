@@ -5,6 +5,7 @@ import Connect4Board from './components/Connect4Board'
 import AtaxxGame from './games/ataxx/Game.jsx'
 import CheckersGame from './games/checkers/Game.jsx'
 import DotsBoxesGame from './games/dots-boxes/Game.jsx'
+import SudokuGame from './games/sudoku/Game.jsx'
 import { gamesById } from './gameRegistry.js'
 
 export const playableGames = [
@@ -53,6 +54,12 @@ export const playableGames = [
         ],
       },
     ],
+  },
+  {
+    ...gamesById.sudoku,
+    Component: SudokuGame,
+    hint: 'Fill every row, column, and 3x3 box',
+    scoreLabels: ['Filled', 'Mistakes'],
   },
 ]
 

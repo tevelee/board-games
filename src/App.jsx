@@ -15,6 +15,7 @@ export default function App() {
   const gameHostRef = useRef(null)
   const activeGame  = game ? playableGamesById[game] : null
   const activeSettings = getGameSettings(activeGame, game ? settingsByGame[game] : null)
+  const activeMode = getGameMode(activeGame, mode)
 
   const handleNewGame = useCallback(() => {
     gameHostRef.current?.resetActive()
@@ -48,7 +49,7 @@ export default function App() {
     setGame(null)
   }, [])
 
-  const [statusText, statusClass] = deriveStatus(uiState, mode)
+  const [statusText, statusClass] = deriveStatus(uiState, activeMode)
 
   return (
     <div className="app">
@@ -71,7 +72,7 @@ export default function App() {
         <GameHost
           ref={gameHostRef}
           activeGameId={game}
-          mode={mode}
+          mode={activeMode}
           difficulty={difficulty}
           settings={activeSettings}
           onActiveStateChange={setUiState}
@@ -80,10 +81,12 @@ export default function App() {
 
       {game && (
         <BottomBar
-          mode={mode}
+          mode={activeMode}
           difficulty={difficulty}
           scores={uiState.scores}
           hint={activeGame?.hint}
+          gameModes={activeGame?.modes}
+          scoreLabels={activeGame?.scoreLabels}
           gameOptions={activeGame?.options}
           gameSettings={activeSettings}
           onGameSettingChange={handleSettingChange}
@@ -104,4 +107,14 @@ function getGameSettings(game, overrides) {
     option.id,
     overrides?.[option.id] ?? option.defaultValue ?? option.options[0]?.value,
   ]))
+}
+
+function getGameMode(game, preferredMode) {
+  if (!game) return preferredMode
+  if (game.modes.length === 1 && game.modes[0] === 'solo') return 'solo'
+  if (preferredMode === 'pvp' && game.modes.includes('local-2p')) return 'pvp'
+  if (preferredMode === 'pvai' && game.modes.includes('vs-ai')) return 'pvai'
+  if (game.modes.includes('vs-ai')) return 'pvai'
+  if (game.modes.includes('local-2p')) return 'pvp'
+  return preferredMode
 }

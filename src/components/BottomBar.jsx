@@ -116,6 +116,11 @@ const MODE_OPTIONS = [
   { value: 'pvp', label: 'vs Player' },
 ]
 
+const MODE_OPTIONS_BY_GAME_MODE = {
+  'vs-ai': MODE_OPTIONS[0],
+  'local-2p': MODE_OPTIONS[1],
+}
+
 const DIFFICULTY_OPTIONS = [
   { value: 'easy', label: 'Easy' },
   { value: 'medium', label: 'Medium' },
@@ -125,24 +130,29 @@ const DIFFICULTY_OPTIONS = [
 
 export default function BottomBar({
   mode, difficulty, scores, hint,
-  gameOptions = [], gameSettings = {}, onGameSettingChange,
+  gameModes = [], scoreLabels, gameOptions = [], gameSettings = {}, onGameSettingChange,
   onModeChange, onDifficultyChange, onNewGame,
   canUndo, onUndo,
 }) {
+  const solo = mode === 'solo'
   const pvp = mode === 'pvp'
+  const modeOptions = gameModes.map(gameMode => MODE_OPTIONS_BY_GAME_MODE[gameMode]).filter(Boolean)
+  const labels = scoreLabels ?? (solo ? ['Filled', 'Mistakes'] : pvp ? ['P1', 'P2'] : ['You', 'AI'])
+  const showModeSelect = modeOptions.length > 1
+  const showDifficulty = solo || mode === 'pvai'
 
   return (
     <div className="bottom-bar">
       <div className="scores">
         <div className="score-chip">
           <span className="dot dot-p1" />
-          <span className="score-label">{pvp ? 'P1' : 'You'}</span>
+          <span className="score-label">{labels[0]}</span>
           <span className="score-val">{scores.p1}</span>
         </div>
         <span className="score-sep">:</span>
         <div className="score-chip">
           <span className="dot dot-p2" />
-          <span className="score-label">{pvp ? 'P2' : 'AI'}</span>
+          <span className="score-label">{labels[1]}</span>
           <span className="score-val">{scores.p2}</span>
         </div>
       </div>
@@ -162,14 +172,16 @@ export default function BottomBar({
           />
         ))}
 
-        <SelectMenu
-          label="Game mode"
-          value={mode}
-          options={MODE_OPTIONS}
-          onChange={onModeChange}
-        />
+        {showModeSelect && (
+          <SelectMenu
+            label="Game mode"
+            value={mode}
+            options={modeOptions}
+            onChange={onModeChange}
+          />
+        )}
 
-        {!pvp && (
+        {showDifficulty && (
           <SelectMenu
             label="Difficulty"
             value={difficulty}

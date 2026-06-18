@@ -347,7 +347,7 @@ export const games = [
     id: 'sudoku',
     title: 'Sudoku',
     category: 'Puzzle',
-    status: 'idea',
+    status: 'playable',
     modes: ['solo'],
     tags: ['puzzle', 'grid', 'solo'],
     complexity: 'Medium',
