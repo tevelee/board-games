@@ -67,7 +67,7 @@ const Connect4Board = forwardRef(function Connect4Board({ mode, difficulty, onSt
 
   useEffect(() => {
     if (!gs.busy) return
-    const delay = diffRef.current === 'expert' ? 100 : diffRef.current === 'hard' ? 60 : 30
+    const delay = diffRef.current === 'expert' ? 900 : diffRef.current === 'hard' ? 700 : diffRef.current === 'medium' ? 500 : 400
     const timer = setTimeout(() => {
       setGs(s => {
         if (!s.busy) return s

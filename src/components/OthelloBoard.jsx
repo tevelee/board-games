@@ -53,7 +53,7 @@ const OthelloBoard = forwardRef(function OthelloBoard({ mode, difficulty, onStat
   // ── AI trigger ──────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!gs.busy) return
-    const delay = diffRef.current === 'expert' ? 120 : 30
+    const delay = diffRef.current === 'expert' ? 700 : diffRef.current === 'medium' ? 500 : 400
     const timer = setTimeout(() => {
       setGs(s => {
         if (!s.busy) return s

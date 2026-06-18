@@ -59,7 +59,7 @@ const MorrisBoard = forwardRef(function MorrisBoard({ mode, difficulty, onStateC
   // ── AI trigger ──────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!gs.busy) return
-    const delay = diffRef.current === 'expert' ? 100 : 30
+    const delay = diffRef.current === 'expert' ? 700 : diffRef.current === 'medium' ? 500 : 400
     const timer = setTimeout(() => {
       setGs(s => {
         if (!s.busy) return s
