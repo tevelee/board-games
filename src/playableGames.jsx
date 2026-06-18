@@ -10,6 +10,7 @@ import SudokuGame from './games/sudoku/Game.jsx'
 import BackgammonGame from './games/backgammon/Game.jsx'
 import NonogramGame from './games/nonogram/Game.jsx'
 import BlockPuzzleGame from './games/block-puzzle/Game.jsx'
+import HiveGame from './games/hive/Game.jsx'
 import { gamesById } from './gameRegistry.js'
 
 export const playableGames = [
@@ -107,6 +108,12 @@ export const playableGames = [
     Component: SudokuGame,
     hint: 'Fill every row, column, and 3x3 box',
     scoreLabels: ['Filled', 'Mistakes'],
+  },
+  {
+    ...gamesById.hive,
+    Component: HiveGame,
+    hint: 'Tap a reserve tile · Surround the opposing queen',
+    scoreLabels: ['P1', 'P2'],
   },
 ]
 

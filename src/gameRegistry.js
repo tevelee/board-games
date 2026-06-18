@@ -413,7 +413,7 @@ export const games = [
     id: 'hive',
     title: 'Hive',
     category: 'Abstract Strategy',
-    status: 'idea',
+    status: 'playable',
     modes: ['vs-ai', 'local-2p'],
     tags: ['abstract', 'turn-based', 'deep'],
     complexity: 'Deep',
