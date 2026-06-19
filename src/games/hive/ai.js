@@ -2,6 +2,9 @@ import {
   ANT,
   BEETLE,
   GRASSHOPPER,
+  LADYBUG,
+  MOSQUITO,
+  PILLBUG,
   QUEEN,
   SPIDER,
   applyMove,
@@ -22,6 +25,9 @@ const TYPE_VALUE = {
   [ANT]: 8,
   [GRASSHOPPER]: 6,
   [SPIDER]: 5,
+  [LADYBUG]: 7,
+  [MOSQUITO]: 8,
+  [PILLBUG]: 8,
 }
 
 const DIFFICULTY = {
@@ -74,8 +80,16 @@ function evaluate(pieces, player) {
   return attack - danger + mobility * 1.5 + ownQueen + oppQueen + development * 2 + beetleReserve + antReserve
 }
 
-function orderedMoves(pieces, player, maximizingPlayer = player) {
-  return getAllLegalMoves(pieces, player)
+function nextContextForMove(move, result, player, turn) {
+  const movedPieceId = result.piece?.id ?? null
+  return {
+    blockedPieceId: move.kind === 'pillbug' && turn.current === opponent(player) ? movedPieceId : null,
+    previousMovedId: turn.current === opponent(player) ? movedPieceId : null,
+  }
+}
+
+function orderedMoves(pieces, player, maximizingPlayer = player, context = {}) {
+  return getAllLegalMoves(pieces, player, context)
     .map(move => {
       const { pieces: next } = applyMove(pieces, move, player)
       const winner = getWinner(next)
@@ -89,19 +103,19 @@ function orderedMoves(pieces, player, maximizingPlayer = player) {
     .map(item => item.move)
 }
 
-function minimax(pieces, player, maximizingPlayer, depth, width, alpha, beta) {
+function minimax(pieces, player, maximizingPlayer, depth, width, alpha, beta, context = {}) {
   const winner = getWinner(pieces)
   if (depth === 0 || winner) return evaluate(pieces, maximizingPlayer)
 
-  const moves = orderedMoves(pieces, player, maximizingPlayer).slice(0, width)
+  const moves = orderedMoves(pieces, player, maximizingPlayer, context).slice(0, width)
   if (!moves.length) return evaluate(pieces, maximizingPlayer)
 
   if (player === maximizingPlayer) {
     let best = -Infinity
     for (const move of moves) {
-      const { pieces: next } = applyMove(pieces, move, player)
-      const turn = getNextTurn(next, player)
-      best = Math.max(best, minimax(next, turn.current, maximizingPlayer, depth - 1, width, alpha, beta))
+      const result = applyMove(pieces, move, player)
+      const turn = getNextTurn(result.pieces, player, nextContextForMove(move, result, player, { current: opponent(player) }))
+      best = Math.max(best, minimax(result.pieces, turn.current, maximizingPlayer, depth - 1, width, alpha, beta, nextContextForMove(move, result, player, turn)))
       alpha = Math.max(alpha, best)
       if (beta <= alpha) break
     }
@@ -110,18 +124,18 @@ function minimax(pieces, player, maximizingPlayer, depth, width, alpha, beta) {
 
   let best = Infinity
   for (const move of moves) {
-    const { pieces: next } = applyMove(pieces, move, player)
-    const turn = getNextTurn(next, player)
-    best = Math.min(best, minimax(next, turn.current, maximizingPlayer, depth - 1, width, alpha, beta))
+    const result = applyMove(pieces, move, player)
+    const turn = getNextTurn(result.pieces, player, nextContextForMove(move, result, player, { current: opponent(player) }))
+    best = Math.min(best, minimax(result.pieces, turn.current, maximizingPlayer, depth - 1, width, alpha, beta, nextContextForMove(move, result, player, turn)))
     beta = Math.min(beta, best)
     if (beta <= alpha) break
   }
   return best
 }
 
-export function computeHiveMove(pieces, player, difficulty = 'medium') {
+export function computeHiveMove(pieces, player, difficulty = 'medium', context = {}) {
   const config = DIFFICULTY[difficulty] ?? DIFFICULTY.medium
-  const moves = orderedMoves(pieces, player).slice(0, Math.max(config.width, 1))
+  const moves = orderedMoves(pieces, player, player, context).slice(0, Math.max(config.width, 1))
   if (!moves.length) return null
 
   if (difficulty === 'easy' && Math.random() < config.randomness) {
@@ -137,9 +151,9 @@ export function computeHiveMove(pieces, player, difficulty = 'medium') {
   let bestScore = -Infinity
 
   for (const move of moves) {
-    const { pieces: next } = applyMove(pieces, move, player)
-    const turn = getNextTurn(next, player)
-    const score = minimax(next, turn.current, player, config.depth, config.width, -Infinity, Infinity)
+    const result = applyMove(pieces, move, player)
+    const turn = getNextTurn(result.pieces, player, nextContextForMove(move, result, player, { current: opponent(player) }))
+    const score = minimax(result.pieces, turn.current, player, config.depth, config.width, -Infinity, Infinity, nextContextForMove(move, result, player, turn))
     if (score > bestScore) {
       bestScore = score
       bestMove = move

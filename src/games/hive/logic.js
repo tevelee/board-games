@@ -7,8 +7,11 @@ export const BEETLE = 'beetle'
 export const GRASSHOPPER = 'grasshopper'
 export const SPIDER = 'spider'
 export const ANT = 'ant'
+export const LADYBUG = 'ladybug'
+export const MOSQUITO = 'mosquito'
+export const PILLBUG = 'pillbug'
 
-export const PIECE_ORDER = [QUEEN, BEETLE, GRASSHOPPER, SPIDER, ANT]
+export const PIECE_ORDER = [QUEEN, BEETLE, GRASSHOPPER, SPIDER, ANT, LADYBUG, MOSQUITO, PILLBUG]
 
 export const PIECE_COUNTS = {
   [QUEEN]: 1,
@@ -16,6 +19,9 @@ export const PIECE_COUNTS = {
   [GRASSHOPPER]: 3,
   [SPIDER]: 2,
   [ANT]: 3,
+  [LADYBUG]: 1,
+  [MOSQUITO]: 1,
+  [PILLBUG]: 1,
 }
 
 export const PIECE_LABELS = {
@@ -24,6 +30,9 @@ export const PIECE_LABELS = {
   [GRASSHOPPER]: 'G',
   [SPIDER]: 'S',
   [ANT]: 'A',
+  [LADYBUG]: 'L',
+  [MOSQUITO]: 'M',
+  [PILLBUG]: 'P',
 }
 
 export const PIECE_NAMES = {
@@ -32,6 +41,9 @@ export const PIECE_NAMES = {
   [GRASSHOPPER]: 'Grasshopper',
   [SPIDER]: 'Spider',
   [ANT]: 'Ant',
+  [LADYBUG]: 'Ladybug',
+  [MOSQUITO]: 'Mosquito',
+  [PILLBUG]: 'Pillbug',
 }
 
 export const DIRECTIONS = [
@@ -164,6 +176,7 @@ export function getPlacementMoves(pieces, player, type) {
   if (!PIECE_COUNTS[type]) return []
   if (getInventory(pieces, player)[type] <= 0) return []
   if (queenMustBePlaced(pieces, player) && type !== QUEEN) return []
+  if (countPlayerPieces(pieces, player) === 0 && type === QUEEN) return []
 
   const stacks = getStacks(pieces)
 
@@ -263,6 +276,14 @@ export function removalKeepsHiveConnected(pieces, id) {
 
 function emptyNeighborCoords(stacks, coord) {
   return neighbors(coord).filter(next => !occupiedHas(stacks, next))
+}
+
+function uniqueMoves(moves) {
+  const seen = new Map()
+  for (const move of moves) {
+    seen.set(`${move.kind}:${move.id ?? ''}:${move.targetId ?? ''}:${move.q},${move.r}`, move)
+  }
+  return [...seen.values()].sort(compareMoves)
 }
 
 function getQueenMoves(pieces, piece, boardAfterRemove) {
@@ -370,16 +391,81 @@ function getAntMoves(piece, boardAfterRemove) {
   return [...results.values()].sort(compareMoves)
 }
 
-export function getPieceMoves(pieces, id) {
-  const piece = getPiece(pieces, id)
-  if (!piece) return []
-  if (!isQueenPlaced(pieces, piece.player)) return []
-  if (!isTopPiece(pieces, id)) return []
-  if (!removalKeepsHiveConnected(pieces, id)) return []
+function getLadybugMoves(piece, boardAfterRemove) {
+  const from = { q: piece.q, r: piece.r }
+  const results = new Map()
 
-  const boardAfterRemove = occupiedAfterRemoving(pieces, id)
+  function walk(current, depth, visited) {
+    if (depth === 3) {
+      if (!occupiedHas(boardAfterRemove, current) && !sameCoord(current, from)) {
+        results.set(coordKey(current.q, current.r), {
+          kind: 'move',
+          id: piece.id,
+          player: piece.player,
+          q: current.q,
+          r: current.r,
+        })
+      }
+      return
+    }
 
-  switch (piece.type) {
+    for (const next of neighbors(current)) {
+      const key = coordKey(next.q, next.r)
+      if (visited.has(key)) continue
+
+      if (depth < 2) {
+        if (!occupiedHas(boardAfterRemove, next)) continue
+      } else if (occupiedHas(boardAfterRemove, next)) {
+        continue
+      }
+
+      visited.add(key)
+      walk(next, depth + 1, visited)
+      visited.delete(key)
+    }
+  }
+
+  walk(from, 0, new Set([coordKey(from.q, from.r)]))
+  return [...results.values()].sort(compareMoves)
+}
+
+function getPillbugAbilityMoves(pieces, piece, context = {}) {
+  const actor = { q: piece.q, r: piece.r }
+  const moves = []
+  const stacks = getStacks(pieces)
+
+  for (const targetCoord of neighbors(actor)) {
+    const targetKey = coordKey(targetCoord.q, targetCoord.r)
+    const stack = stacks.get(targetKey)
+    if (!stack || stack.length !== 1) continue
+
+    const target = stack[0]
+    if (target.id === context.previousMovedId) continue
+    if (target.id === context.blockedPieceId) continue
+    if (!removalKeepsHiveConnected(pieces, target.id)) continue
+
+    const boardAfterTargetRemove = occupiedAfterRemoving(pieces, target.id)
+    for (const to of neighbors(actor)) {
+      if (sameCoord(to, targetCoord)) continue
+      if (occupiedHas(stacks, to)) continue
+      if (!touchesHive(boardAfterTargetRemove, to)) continue
+      if (!canSlide(boardAfterTargetRemove, actor, to)) continue
+      moves.push({
+        kind: 'pillbug',
+        id: piece.id,
+        targetId: target.id,
+        player: piece.player,
+        q: to.q,
+        r: to.r,
+      })
+    }
+  }
+
+  return uniqueMoves(moves)
+}
+
+function getMovesAsType(pieces, piece, boardAfterRemove, type, context = {}) {
+  switch (type) {
     case QUEEN:
       return getQueenMoves(pieces, piece, boardAfterRemove)
     case BEETLE:
@@ -390,32 +476,71 @@ export function getPieceMoves(pieces, id) {
       return getSpiderMoves(piece, boardAfterRemove)
     case ANT:
       return getAntMoves(piece, boardAfterRemove)
+    case LADYBUG:
+      return getLadybugMoves(piece, boardAfterRemove)
+    case PILLBUG:
+      return [
+        ...getQueenMoves(pieces, piece, boardAfterRemove),
+        ...getPillbugAbilityMoves(pieces, piece, context),
+      ]
     default:
       return []
   }
 }
 
-export function getAllPieceMoves(pieces, player) {
+function getMosquitoMoves(pieces, piece, boardAfterRemove, context = {}) {
+  if (stackAt(pieces, piece.q, piece.r).length > 1) {
+    return getBeetleMoves(pieces, piece, boardAfterRemove)
+  }
+
+  const adjacentTypes = new Set(
+    neighbors(piece)
+      .map(coord => topPieceAt(pieces, coord.q, coord.r))
+      .filter(Boolean)
+      .map(neighbor => neighbor.type)
+      .filter(type => type !== MOSQUITO)
+  )
+
+  return uniqueMoves(
+    [...adjacentTypes].flatMap(type => getMovesAsType(pieces, piece, boardAfterRemove, type, context))
+  )
+}
+
+export function getPieceMoves(pieces, id, context = {}) {
+  const piece = getPiece(pieces, id)
+  if (!piece) return []
+  if (piece.id === context.blockedPieceId) return []
+  if (!isQueenPlaced(pieces, piece.player)) return []
+  if (!isTopPiece(pieces, id)) return []
+  if (!removalKeepsHiveConnected(pieces, id)) return []
+
+  const boardAfterRemove = occupiedAfterRemoving(pieces, id)
+
+  if (piece.type === MOSQUITO) return getMosquitoMoves(pieces, piece, boardAfterRemove, context)
+  return getMovesAsType(pieces, piece, boardAfterRemove, piece.type, context)
+}
+
+export function getAllPieceMoves(pieces, player, context = {}) {
   if (!isQueenPlaced(pieces, player)) return []
   return pieces
     .filter(piece => piece.player === player && isTopPiece(pieces, piece.id))
-    .flatMap(piece => getPieceMoves(pieces, piece.id))
+    .flatMap(piece => getPieceMoves(pieces, piece.id, context))
     .sort(compareMoves)
 }
 
-export function getAllLegalMoves(pieces, player) {
+export function getAllLegalMoves(pieces, player, context = {}) {
   return [
     ...getAllPlacementMoves(pieces, player),
-    ...getAllPieceMoves(pieces, player),
+    ...getAllPieceMoves(pieces, player, context),
   ].sort(compareMoves)
 }
 
-export function getNextTurn(pieces, movedPlayer) {
+export function getNextTurn(pieces, movedPlayer, context = {}) {
   const winner = getWinner(pieces)
   const next = opponent(movedPlayer)
   if (winner) return { current: next, winner, passed: false }
 
-  if (getAllLegalMoves(pieces, next).length > 0) {
+  if (getAllLegalMoves(pieces, next, context).length > 0) {
     return { current: next, winner: null, passed: false }
   }
 
@@ -426,12 +551,12 @@ export function getNextTurn(pieces, movedPlayer) {
   return { current: next, winner: DRAW, passed: true }
 }
 
-export function getLegalMovesForSelection(pieces, selection, player) {
+export function getLegalMovesForSelection(pieces, selection, player, context = {}) {
   if (!selection) return []
   if (selection.kind === 'hand') return getPlacementMoves(pieces, player, selection.type)
   if (selection.kind === 'piece') {
     const piece = getPiece(pieces, selection.id)
-    return piece?.player === player ? getPieceMoves(pieces, selection.id) : []
+    return piece?.player === player ? getPieceMoves(pieces, selection.id, context) : []
   }
   return []
 }
@@ -449,6 +574,20 @@ export function applyMove(pieces, move, player = move.player) {
       pieces: [...pieces, piece],
       piece,
       from: null,
+      to: { q: move.q, r: move.r },
+    }
+  }
+
+  if (move.kind === 'pillbug') {
+    const target = getPiece(pieces, move.targetId)
+    if (!target) return { pieces, piece: null, from: null, to: null }
+
+    const moved = { ...target, q: move.q, r: move.r }
+    return {
+      pieces: [...pieces.filter(candidate => candidate.id !== move.targetId), moved],
+      piece: moved,
+      actorId: move.id,
+      from: { q: target.q, r: target.r },
       to: { q: move.q, r: move.r },
     }
   }
@@ -477,12 +616,12 @@ export function getWinner(pieces) {
   return null
 }
 
-export function getSelectablePieceIds(pieces, player) {
+export function getSelectablePieceIds(pieces, player, context = {}) {
   if (!isQueenPlaced(pieces, player)) return new Set()
   return new Set(
     pieces
       .filter(piece => piece.player === player && isTopPiece(pieces, piece.id))
-      .filter(piece => getPieceMoves(pieces, piece.id).length > 0)
+      .filter(piece => getPieceMoves(pieces, piece.id, context).length > 0)
       .map(piece => piece.id)
   )
 }
@@ -491,6 +630,7 @@ export function compareMoves(a, b) {
   if (a.kind !== b.kind) return a.kind === 'place' ? -1 : 1
   if (a.type !== b.type) return PIECE_ORDER.indexOf(a.type) - PIECE_ORDER.indexOf(b.type)
   if ((a.id ?? '') !== (b.id ?? '')) return String(a.id ?? '').localeCompare(String(b.id ?? ''))
+  if ((a.targetId ?? '') !== (b.targetId ?? '')) return String(a.targetId ?? '').localeCompare(String(b.targetId ?? ''))
   if (a.r !== b.r) return a.r - b.r
   return a.q - b.q
 }

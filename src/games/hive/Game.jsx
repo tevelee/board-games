@@ -7,6 +7,9 @@ import {
   BEETLE,
   DRAW,
   GRASSHOPPER,
+  LADYBUG,
+  MOSQUITO,
+  PILLBUG,
   PIECE_LABELS,
   PIECE_NAMES,
   PIECE_ORDER,
@@ -43,14 +46,16 @@ const LAYOUTS = {
     handH: 104,
     footerH: 40,
     baseHex: 36,
-    reserveStart: 190,
-    reserveStep: 92,
+    reserveStart: 140,
+    reserveStep: 72,
+    reserveColumns: 8,
     reserveY: 42,
+    reserveRowGap: 72,
     turnX: 34,
     turnY: 32,
     turnTextX: 52,
     turnStatusY: 62,
-    queenX: 692,
+    queenX: 720,
     queenY: 24,
     showTurnStatus: true,
     showQueens: true,
@@ -58,12 +63,14 @@ const LAYOUTS = {
   mobile: {
     viewW: 430,
     viewH: 720,
-    handH: 128,
+    handH: 190,
     footerH: 42,
     baseHex: 34,
-    reserveStart: 82,
-    reserveStep: 73,
-    reserveY: 72,
+    reserveStart: 90,
+    reserveStep: 100,
+    reserveColumns: 4,
+    reserveY: 58,
+    reserveRowGap: 72,
     turnX: 18,
     turnY: 24,
     turnTextX: 34,
@@ -79,12 +86,13 @@ function makeInitialState() {
   return {
     pieces: makeInitialPieces(),
     current: P1,
-    selected: { kind: 'hand', type: QUEEN },
+    selected: { kind: 'hand', type: BEETLE },
     winner: null,
     passed: false,
     busy: false,
     scores: { p1: 0, p2: 0 },
     lastMove: null,
+    pillbugLockedId: null,
   }
 }
 
@@ -117,6 +125,22 @@ function playerInk(player) {
 
 function moveKey(move) {
   return `${move.q},${move.r}`
+}
+
+function reservePosition(layout, index) {
+  const col = index % layout.reserveColumns
+  const row = Math.floor(index / layout.reserveColumns)
+  return {
+    x: layout.reserveStart + col * layout.reserveStep,
+    y: layout.reserveY + row * layout.reserveRowGap,
+  }
+}
+
+function getMoveContext(gs, player = gs.current) {
+  return {
+    blockedPieceId: gs.pillbugLockedId,
+    previousMovedId: gs.lastMove?.player !== player ? gs.lastMove?.pieceId : null,
+  }
 }
 
 function hexPoints(cx, cy, radius) {
@@ -174,7 +198,13 @@ function getBoardCoords(pieces, targetMoves) {
 }
 
 function finishTurn(s, pieces, movedPlayer, move, result, pvp) {
-  const turn = getNextTurn(pieces, movedPlayer)
+  const nextPlayer = opponent(movedPlayer)
+  const movedPieceId = result.piece?.id ?? null
+  const nextContext = {
+    blockedPieceId: move.kind === 'pillbug' ? movedPieceId : null,
+    previousMovedId: movedPieceId,
+  }
+  const turn = getNextTurn(pieces, movedPlayer, nextContext)
   const scores = { ...s.scores }
 
   if (turn.winner === P1) scores.p1 += 1
@@ -192,6 +222,7 @@ function finishTurn(s, pieces, movedPlayer, move, result, pvp) {
     passed: turn.passed,
     busy: needsAI,
     scores,
+    pillbugLockedId: turn.current === nextPlayer ? nextContext.blockedPieceId : null,
     lastMove: movedPiece
       ? {
           ...move,
@@ -254,6 +285,36 @@ function PieceMark({ type, color }) {
         <circle cx="1" cy="0" r="6" fill="none" stroke={markColor} strokeWidth="2.7" />
         <circle cx="11" cy="0" r="5" fill="none" stroke={markColor} strokeWidth="2.7" />
         <path d="M-3 -5L-10 -13M2 -6L2 -15M7 -5L14 -13M-3 5L-10 13M2 6L2 15M7 5L14 13" stroke={markColor} strokeWidth="2.3" strokeLinecap="round" />
+      </>
+    )
+  }
+  if (type === LADYBUG) {
+    return (
+      <>
+        <circle cx="0" cy="1" r="13" fill="none" stroke={markColor} strokeWidth="3" />
+        <path d="M0 -12V14M-11 -2H11" stroke={markColor} strokeWidth="2.4" strokeLinecap="round" />
+        <circle cx="-6" cy="-5" r="2.5" fill={markColor} />
+        <circle cx="6" cy="-5" r="2.5" fill={markColor} />
+        <circle cx="-5" cy="6" r="2.5" fill={markColor} />
+        <circle cx="5" cy="6" r="2.5" fill={markColor} />
+      </>
+    )
+  }
+  if (type === MOSQUITO) {
+    return (
+      <>
+        <path d="M0 -16V14M0 14L-6 19M0 14L6 19M0 -5L-12 -13M0 -5L12 -13" stroke={markColor} strokeWidth="2.4" strokeLinecap="round" />
+        <ellipse cx="-8" cy="-1" rx="7" ry="11" fill="none" stroke={markColor} strokeWidth="2.4" transform="rotate(-28 -8 -1)" />
+        <ellipse cx="8" cy="-1" rx="7" ry="11" fill="none" stroke={markColor} strokeWidth="2.4" transform="rotate(28 8 -1)" />
+        <circle cx="0" cy="-14" r="3.2" fill={markColor} />
+      </>
+    )
+  }
+  if (type === PILLBUG) {
+    return (
+      <>
+        <path d="M-14 8C-11 -10 -4 -16 7 -13C16 -10 18 1 12 10C5 18 -9 17 -14 8Z" fill="none" stroke={markColor} strokeWidth="3" strokeLinejoin="round" />
+        <path d="M-8 -3C-2 -8 5 -9 12 -5M-11 5C-3 0 6 0 14 4M-4 12C1 7 8 6 13 9" stroke={markColor} strokeWidth="2.4" strokeLinecap="round" />
       </>
     )
   }
@@ -342,7 +403,8 @@ const HiveGame = forwardRef(function HiveGame({ mode, difficulty, onStateChange 
     const timer = setTimeout(() => {
       setGs(s => {
         if (!s.busy) return s
-        const move = computeHiveMove(s.pieces, s.current, diffRef.current)
+        const context = getMoveContext(s)
+        const move = computeHiveMove(s.pieces, s.current, diffRef.current, context)
         if (!move) {
           const next = opponent(s.current)
           const bothBlocked = getAllLegalMoves(s.pieces, next).length === 0
@@ -353,6 +415,7 @@ const HiveGame = forwardRef(function HiveGame({ mode, difficulty, onStateChange 
             passed: true,
             busy: false,
             selected: null,
+            pillbugLockedId: null,
           }
         }
         const result = applyMove(s.pieces, move, s.current)
@@ -364,11 +427,12 @@ const HiveGame = forwardRef(function HiveGame({ mode, difficulty, onStateChange 
 
   const pvp = mode === 'pvp'
   const humanTurn = !gs.winner && !gs.busy && (pvp || gs.current === P1)
+  const moveContext = getMoveContext(gs)
   const inventory = getInventory(gs.pieces, gs.current)
-  const selectedMoves = humanTurn ? getLegalMovesForSelection(gs.pieces, gs.selected, gs.current) : []
+  const selectedMoves = humanTurn ? getLegalMovesForSelection(gs.pieces, gs.selected, gs.current, moveContext) : []
   const selectedTargetMap = new Map(selectedMoves.map(move => [moveKey(move), move]))
-  const selectablePieceIds = humanTurn ? getSelectablePieceIds(gs.pieces, gs.current) : new Set()
-  const allLegalMoves = humanTurn ? getAllLegalMoves(gs.pieces, gs.current) : []
+  const selectablePieceIds = humanTurn ? getSelectablePieceIds(gs.pieces, gs.current, moveContext) : new Set()
+  const allLegalMoves = humanTurn ? getAllLegalMoves(gs.pieces, gs.current, moveContext) : []
   const requiredQueen = queenMustBePlaced(gs.pieces, gs.current)
 
   const boardCoords = useMemo(
@@ -394,7 +458,7 @@ const HiveGame = forwardRef(function HiveGame({ mode, difficulty, onStateChange 
   function handleReserveClick(type) {
     if (!humanTurn) return
     if (inventory[type] <= 0) return
-    const legal = getLegalMovesForSelection(gs.pieces, { kind: 'hand', type }, gs.current)
+    const legal = getLegalMovesForSelection(gs.pieces, { kind: 'hand', type }, gs.current, moveContext)
     if (!legal.length) return
     setGs(s => ({ ...s, selected: { kind: 'hand', type } }))
   }
@@ -410,7 +474,7 @@ const HiveGame = forwardRef(function HiveGame({ mode, difficulty, onStateChange 
 
     const topPiece = topPieceAt(gs.pieces, q, r)
     if (topPiece?.player === gs.current) {
-      const moves = getPieceMoves(gs.pieces, topPiece.id)
+      const moves = getPieceMoves(gs.pieces, topPiece.id, moveContext)
       setGs(s => ({ ...s, selected: moves.length ? { kind: 'piece', id: topPiece.id } : null }))
       return
     }
@@ -471,8 +535,9 @@ const HiveGame = forwardRef(function HiveGame({ mode, difficulty, onStateChange 
       )}
 
       {PIECE_ORDER.map((type, index) => {
+        const position = reservePosition(layout, index)
         const count = inventory[type]
-        const legal = humanTurn ? getLegalMovesForSelection(gs.pieces, { kind: 'hand', type }, gs.current).length : 0
+        const legal = humanTurn ? getLegalMovesForSelection(gs.pieces, { kind: 'hand', type }, gs.current, moveContext).length : 0
         const disabled = !humanTurn || count <= 0 || legal === 0
         const selected = gs.selected?.kind === 'hand' && gs.selected.type === type
         return (
@@ -480,8 +545,8 @@ const HiveGame = forwardRef(function HiveGame({ mode, difficulty, onStateChange 
             key={type}
             type={type}
             count={count}
-            x={layout.reserveStart + index * layout.reserveStep}
-            y={layout.reserveY}
+            x={position.x}
+            y={position.y}
             current={gs.current}
             selected={selected}
             disabled={disabled}
