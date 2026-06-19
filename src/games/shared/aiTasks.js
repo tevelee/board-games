@@ -8,6 +8,8 @@ const MAIN_THREAD_MODULES = {
   hive: () => import('../hive/ai.js'),
   morris: () => import('../morris/ai.js'),
   othello: () => import('../othello/ai.js'),
+  'tic-tac-toe': () => import('../tic-tac-toe/ai.js'),
+  'ultimate-tic-tac-toe': () => import('../ultimate-tic-tac-toe/ai.js'),
 }
 
 let nextTaskId = 1

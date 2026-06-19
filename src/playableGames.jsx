@@ -6,6 +6,9 @@ import AtaxxGame from './games/ataxx/Game.jsx'
 import { BOARD_LAYOUTS as ATAXX_BOARD_LAYOUTS } from './games/ataxx/logic.js'
 import CheckersGame from './games/checkers/Game.jsx'
 import DotsBoxesGame from './games/dots-boxes/Game.jsx'
+import TicTacToeGame from './games/tic-tac-toe/Game.jsx'
+import UltimateTicTacToeGame from './games/ultimate-tic-tac-toe/Game.jsx'
+import VanishingTicTacToeGame from './games/tic-tac-toe-disappear/Game.jsx'
 import SudokuGame from './games/sudoku/Game.jsx'
 import BackgammonGame from './games/backgammon/Game.jsx'
 import NonogramGame from './games/nonogram/Game.jsx'
@@ -136,6 +139,48 @@ export const playableGames = [
         ],
       },
     ],
+  },
+  {
+    ...gamesById['tic-tac-toe'],
+    Component: TicTacToeGame,
+    hint: 'Tap an empty square · Make three in a row',
+    rules: {
+      objective: 'Make three marks in a row before your opponent does.',
+      bullets: [
+        'Players alternate placing one mark in an empty square.',
+        'Three marks in a row wins horizontally, vertically, or diagonally.',
+        'If all squares fill with no three-in-a-row, the game is a draw.',
+      ],
+    },
+  },
+  {
+    ...gamesById['ultimate-tic-tac-toe'],
+    Component: UltimateTicTacToeGame,
+    hint: 'Your move sends the opponent to the matching small board',
+    rules: {
+      objective: 'Win three small boards in a row on the large board.',
+      bullets: [
+        'Each small board is a normal tic-tac-toe board.',
+        'The cell you choose sends the opponent to the matching small board.',
+        'If that target board is already won or full, the opponent may play in any unfinished board.',
+        'Win a small board to claim its square on the large board.',
+        'Three claimed boards in a row wins the game.',
+      ],
+    },
+  },
+  {
+    ...gamesById['tic-tac-toe-disappear'],
+    Component: VanishingTicTacToeGame,
+    hint: 'Each player keeps only three marks · Oldest mark fades next',
+    rules: {
+      objective: 'Make three in a row while each player has at most three marks on the board.',
+      bullets: [
+        'Players alternate placing one mark in an empty square.',
+        'After your third mark is already in play, placing a new mark removes your oldest mark.',
+        'The faint ring marks the oldest mark that will disappear next.',
+        'The game continues until someone makes three in a row.',
+      ],
+    },
   },
   {
     ...gamesById.backgammon,

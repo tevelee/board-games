@@ -2001,6 +2001,287 @@ body {
   accent-color: var(--p1);
 }
 
+/* ── Tic Tac Toe Family ─────────────────────────────────────────────────── */
+.ttt-game,
+.utt-game {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding: 16px;
+  background:
+    linear-gradient(160deg, rgba(88,166,255,0.13), rgba(248,81,73,0.09) 46%, rgba(227,179,65,0.08)),
+    #0d1117;
+  outline: none;
+}
+
+.ttt-shell,
+.utt-shell {
+  display: grid;
+  align-items: center;
+  justify-items: center;
+  gap: 14px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.ttt-board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  width: min(72vh, 560px, calc(100vw - 34px));
+  aspect-ratio: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: 10px;
+  background: #141b22;
+  border: 2px solid #394552;
+  border-radius: var(--radius);
+  box-shadow:
+    0 18px 44px rgba(0,0,0,0.34),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.ttt-cell,
+.utt-cell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  color: var(--text);
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 42%),
+    #101820;
+  border: 1px solid #303b46;
+  border-radius: var(--radius);
+  font: inherit;
+  cursor: pointer;
+  outline: none;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s, opacity 0.15s;
+}
+
+.ttt-cell.legal:hover:not(:disabled),
+.ttt-cell:focus-visible:not(:disabled),
+.utt-cell.legal:hover:not(:disabled),
+.utt-cell:focus-visible:not(:disabled) {
+  border-color: var(--p1);
+  background: #172536;
+}
+
+.ttt-cell:active:not(:disabled),
+.utt-cell:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.ttt-cell:disabled,
+.utt-cell:disabled {
+  cursor: default;
+}
+
+.ttt-cell.filled,
+.utt-cell.filled {
+  cursor: default;
+}
+
+.ttt-mark,
+.utt-mark {
+  display: block;
+  color: var(--mark-color);
+  font-weight: 950;
+  line-height: 1;
+  letter-spacing: 0;
+  text-shadow: 0 0 16px rgba(0,0,0,0.42);
+  animation: ttt-mark-pop 180ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.ttt-mark {
+  font-size: clamp(3rem, 14vh, 7rem);
+}
+
+.ttt-cell.winning,
+.utt-cell.local-win {
+  border-color: #3fb950;
+  background: #102a1a;
+  box-shadow: inset 0 0 0 2px rgba(63,185,80,0.28);
+}
+
+.ttt-cell.last-move:not(.winning),
+.utt-cell.last-move:not(.local-win) {
+  box-shadow: inset 0 0 0 2px rgba(227,179,65,0.42);
+}
+
+.ttt-cell.next-to-vanish::after {
+  content: "";
+  position: absolute;
+  inset: 9%;
+  border: 2px dashed currentColor;
+  border-radius: calc(var(--radius) + 4px);
+  opacity: 0.52;
+  pointer-events: none;
+}
+
+.ttt-cell.removed-mark::before {
+  content: "";
+  position: absolute;
+  inset: 24%;
+  border: 2px solid #f2cc60;
+  border-radius: 50%;
+  opacity: 0;
+  animation: ttt-vanish-ping 520ms ease-out;
+  pointer-events: none;
+}
+
+.ttt-queues {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  min-height: 32px;
+}
+
+.ttt-queue {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 10px;
+  background: #161b22;
+  border: 1px solid #303b46;
+  border-radius: var(--radius);
+}
+
+.ttt-queue span {
+  display: block;
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--mark-color);
+  border-radius: 50%;
+  opacity: 0.32;
+}
+
+.ttt-queue span.filled {
+  background: var(--mark-color);
+  opacity: 0.95;
+  box-shadow: 0 0 10px var(--mark-color);
+}
+
+.utt-board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  width: min(82vh, 700px, calc(100vw - 34px));
+  aspect-ratio: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: 10px;
+  background: #141b22;
+  border: 2px solid #46515d;
+  border-radius: var(--radius);
+  box-shadow:
+    0 18px 44px rgba(0,0,0,0.34),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.utt-small-board {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: 5px;
+  background: #0f171f;
+  border: 1px solid #303b46;
+  border-radius: var(--radius);
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s, opacity 0.15s;
+}
+
+.utt-small-board.playable {
+  border-color: rgba(88,166,255,0.72);
+  background: #132030;
+}
+
+.utt-small-board.active {
+  box-shadow:
+    inset 0 0 0 2px rgba(88,166,255,0.32),
+    0 0 0 2px rgba(88,166,255,0.12);
+}
+
+.utt-small-board.won-p1,
+.utt-small-board.won-p2,
+.utt-small-board.drawn {
+  background: #10161d;
+}
+
+.utt-small-board.macro-win {
+  border-color: #3fb950;
+  box-shadow: 0 0 0 2px rgba(63,185,80,0.2);
+}
+
+.utt-cells {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: 3px;
+  width: 100%;
+  height: 100%;
+}
+
+.utt-cell {
+  border-radius: 5px;
+}
+
+.utt-mark {
+  font-size: clamp(0.95rem, 3.8vh, 2.15rem);
+}
+
+.utt-board-owner {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  color: var(--mark-color);
+  background: rgba(13,17,23,0.72);
+  font-size: clamp(3rem, 14vh, 7rem);
+  font-weight: 950;
+  line-height: 1;
+  text-shadow: 0 0 22px rgba(0,0,0,0.58);
+  pointer-events: none;
+  animation: utt-owner-pop 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.utt-small-board.drawn::after {
+  content: "";
+  position: absolute;
+  inset: 12%;
+  z-index: 2;
+  border-top: 3px solid #8b949e;
+  border-bottom: 3px solid #8b949e;
+  opacity: 0.62;
+  pointer-events: none;
+}
+
+@keyframes ttt-mark-pop {
+  0%   { transform: scale(0.58); opacity: 0; }
+  72%  { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+@keyframes ttt-vanish-ping {
+  0%   { transform: scale(0.5); opacity: 0.9; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+@keyframes utt-owner-pop {
+  0%   { transform: scale(0.7); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 /* ── Tile Merge Games ───────────────────────────────────────────────────── */
 .tile-game {
   position: relative;
@@ -2904,6 +3185,43 @@ body {
   .nonogram-left-clue { padding: 1px 4px; }
   .nonogram-tool { height: 34px; padding: 0 7px; font-size: 0.76rem; }
 
+  .ttt-game,
+  .utt-game {
+    padding: 10px;
+  }
+  .ttt-shell,
+  .utt-shell {
+    gap: 10px;
+  }
+  .ttt-board {
+    width: min(100%, 58vh);
+    gap: 6px;
+    padding: 8px;
+  }
+  .ttt-mark {
+    font-size: clamp(2.4rem, 12vh, 5.6rem);
+  }
+  .utt-board {
+    width: min(100%, 62vh);
+    gap: 6px;
+    padding: 7px;
+  }
+  .utt-small-board {
+    padding: 4px;
+  }
+  .utt-cells {
+    gap: 2px;
+  }
+  .utt-cell {
+    border-radius: 4px;
+  }
+  .utt-mark {
+    font-size: clamp(0.72rem, 3.2vh, 1.48rem);
+  }
+  .utt-board-owner {
+    font-size: clamp(2.2rem, 12vh, 5rem);
+  }
+
   .tile-game { padding: 10px; }
   .tile-game-shell { gap: 9px; }
   .tile-game-scoreboard { gap: 6px; }
@@ -3099,6 +3417,14 @@ body {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .ttt-board {
+    width: min(100%, 62vh);
+  }
+
+  .utt-board {
+    width: min(100%, 64vh);
+  }
+
   .tile-game-shell {
     width: min(100%, 620px);
   }
@@ -3155,11 +3481,18 @@ body {
   .ataxx-clone-piece,
   .tile-game-cell.spawned,
   .tile-game-cell.merged span,
+  .ttt-mark,
+  .ttt-cell.removed-mark::before,
+  .utt-mark,
+  .utt-board-owner,
   .block-puzzle-gem,
   .block-puzzle-cell.line-cleared::after {
     animation: none;
   }
   .tile-game-control,
+  .ttt-cell,
+  .utt-cell,
+  .utt-small-board,
   .block-puzzle-cell,
   .block-puzzle-piece-slot {
     transition: none;

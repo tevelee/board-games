@@ -30,6 +30,9 @@ Each game should eventually have:
 | Ataxx | Abstract strategy | vs AI, Local 2P | Clone, jump, convert adjacent pieces, and selectable obstacle boards |
 | Checkers | Abstract strategy | vs AI, Local 2P | American checkers with forced captures |
 | Dots and Boxes | Grid games | vs AI, Local 2P | Selectable 3x3 through 6x6 box grids |
+| Tic Tac Toe | Grid games | vs AI, Local 2P | Classic 3x3 win-three game |
+| Ultimate Tic-Tac-Toe | Grid games | vs AI, Local 2P | Nine linked boards with target-board routing |
+| Vanishing Tic Tac Toe | Grid games | vs AI, Local 2P | Three-mark limit where each player's oldest mark disappears |
 | Backgammon | Race/table games | vs AI, Local 2P | Dice movement, hits, bar entry, and bearing off |
 | Nonogram | Puzzle | Solo | Generated picture puzzles with selectable 8x8 through 20x20 grids |
 | Threes | Puzzle | Solo | One-cell swipe/merge grid with 1, 2, and 3+ tiles |
@@ -40,9 +43,6 @@ Each game should eventually have:
 
 | Game | Category | Likely Modes | Notes |
 | --- | --- | --- | --- |
-| Tic Tac Toe | Grid games | vs AI, Local 2P | Fast baseline game |
-| Ultimate Tic-Tac-Toe | Grid games | vs AI, Local 2P | Strategic tic-tac-toe variant |
-| Vanishing Tic Tac Toe | Grid games | vs AI, Local 2P | Also known as Tic Tac Toe Disappear or XOGone |
 | Crosswords | Word games | Solo | Needs puzzle source or generator |
 | Chess | Abstract strategy | vs AI, Local 2P | Use proven move-generation logic |
 | Battleship | Hidden information | vs AI, Local 2P | Setup phase plus guessing phase |
