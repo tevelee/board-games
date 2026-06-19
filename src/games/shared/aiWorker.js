@@ -5,6 +5,7 @@ const AI_MODULES = {
   connect4: () => import('../connect4/ai.js'),
   'dots-boxes': () => import('../dots-boxes/ai.js'),
   gomoku: () => import('../gomoku/ai.js'),
+  hex: () => import('../hex/ai.js'),
   hive: () => import('../hive/ai.js'),
   morris: () => import('../morris/ai.js'),
   othello: () => import('../othello/ai.js'),

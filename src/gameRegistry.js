@@ -248,7 +248,7 @@ export const games = [
     id: 'hex',
     title: 'Hex',
     category: 'Abstract Strategy',
-    status: 'planned',
+    status: 'playable',
     modes: ['vs-ai', 'local-2p'],
     tags: ['abstract', 'turn-based', 'deep'],
     complexity: 'Medium',
