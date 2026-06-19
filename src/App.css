@@ -830,14 +830,16 @@ body {
   100% { transform: scale(0.38); opacity: 0; }
 }
 
-.morris-piece-g {
+.morris-piece-g,
+.morris-place-piece,
+.morris-move-piece {
   transform-box: fill-box;
   transform-origin: center;
+}
+.morris-place-piece {
   animation: piece-pop 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.morris-slide-g {
-  transform-box: fill-box;
-  transform-origin: center;
+.morris-move-piece {
   animation: piece-slide 220ms ease-out;
 }
 .morris-hint-ring { pointer-events: none; }
@@ -2098,6 +2100,9 @@ body {
   .game-over-confetti span,
   .game-over-loss-effect i,
   .game-over-loss-effect span,
+  .morris-place-piece,
+  .morris-move-piece,
+  .morris-ripple,
   .morris-removed-piece,
   .othello-flip-piece,
   .ataxx-converted-piece,

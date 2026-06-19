@@ -24,6 +24,7 @@ function makeInitialState() {
     lastNode:   -1,
     movingFrom: -1,
     removedPiece: null,
+    lastAction: null,
     animationId: 0,
   }
 }
@@ -83,8 +84,6 @@ const MorrisGame = forwardRef(function MorrisGame({ mode, difficulty, onStateCha
     const newInHand = [...inHand]
     const newOnBoard = [...onBoard]
 
-    const flying = action.type === 'move' && onBoard[current] === 3 && inHand[current] === 0
-
     if (action.type === 'place') {
       newCells[action.to] = current
       newInHand[current]--
@@ -95,13 +94,22 @@ const MorrisGame = forwardRef(function MorrisGame({ mode, difficulty, onStateCha
     }
 
     const placedAt  = action.to
-    const movingFrom = (action.type === 'move' && !flying) ? action.from : -1
+    const movingFrom = action.type === 'move' ? action.from : -1
+    const animationId = (s.animationId ?? 0) + 1
+    const lastAction = {
+      id: animationId,
+      type: action.type,
+      from: action.type === 'move' ? action.from : -1,
+      to: placedAt,
+      player: current,
+    }
     const mill     = detectMill(newCells, placedAt, current)
 
     if (mill && getRemovable(newCells, current).length > 0) {
       return {
         ...s, cells: newCells, inHand: newInHand, onBoard: newOnBoard,
         mustRemove: true, lastNode: placedAt, movingFrom, busy: false, removedPiece: null,
+        lastAction, animationId,
       }
     }
 
@@ -111,6 +119,7 @@ const MorrisGame = forwardRef(function MorrisGame({ mode, difficulty, onStateCha
         ...s, cells: newCells, inHand: newInHand, onBoard: newOnBoard,
         winner: current, winMill: findWinMill(newCells, current), lastNode: placedAt,
         movingFrom, busy: false, selected: -1, removedPiece: null,
+        lastAction, animationId,
         scores: incrementPlayerScore(scores, current),
       }
     }
@@ -119,6 +128,7 @@ const MorrisGame = forwardRef(function MorrisGame({ mode, difficulty, onStateCha
     return {
       ...s, cells: newCells, inHand: newInHand, onBoard: newOnBoard,
       current: opp, selected: -1, lastNode: placedAt, movingFrom, busy: needsAI, mustRemove: false, removedPiece: null,
+      lastAction, animationId,
     }
   }
 
@@ -154,7 +164,7 @@ const MorrisGame = forwardRef(function MorrisGame({ mode, difficulty, onStateCha
       return {
         ...s, cells: newCells, onBoard: newOnBoard,
         winner: current, winMill: findWinMill(newCells, current),
-        mustRemove: false, busy: false, lastNode: nodeIdx, movingFrom: -1,
+        mustRemove: false, busy: false, movingFrom: -1,
         removedPiece, animationId,
         scores: incrementPlayerScore(scores, current),
       }
@@ -163,7 +173,7 @@ const MorrisGame = forwardRef(function MorrisGame({ mode, difficulty, onStateCha
     const needsAI = !pvp && opp === P2
     return {
       ...s, cells: newCells, onBoard: newOnBoard,
-      current: opp, mustRemove: false, busy: needsAI, lastNode: nodeIdx, movingFrom: -1,
+      current: opp, mustRemove: false, busy: needsAI, movingFrom: -1,
       removedPiece, animationId,
     }
   }
@@ -216,7 +226,7 @@ const MorrisGame = forwardRef(function MorrisGame({ mode, difficulty, onStateCha
 
   // ── Derived rendering data ──────────────────────────────────────────────────
 
-  const { cells, inHand, onBoard, current, selected, mustRemove, winner, busy, lastNode, movingFrom, winMill, removedPiece } = gs
+  const { cells, inHand, onBoard, current, selected, mustRemove, winner, busy, lastNode, winMill, removedPiece, lastAction } = gs
   const pvp    = mode === 'pvp'
   const flying = !winner && !mustRemove && inHand[current] === 0 && onBoard[current] === 3
 
@@ -286,10 +296,10 @@ const MorrisGame = forwardRef(function MorrisGame({ mode, difficulty, onStateCha
         )
       ))}
 
-      {/* Placement ripple on last-placed node */}
-      {lastNode !== -1 && cells[lastNode] !== 0 && (
-        <circle key={lastNode} className="morris-ripple"
-          cx={NODE_POS[lastNode][0]} cy={NODE_POS[lastNode][1]}
+      {/* Placement ripple on the latest placed node */}
+      {lastAction?.type === 'place' && cells[lastAction.to] !== 0 && (
+        <circle key={`place-ripple-${lastAction.id}`} className="morris-ripple"
+          cx={NODE_POS[lastAction.to][0]} cy={NODE_POS[lastAction.to][1]}
           r={20} fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2" />
       )}
 
@@ -297,14 +307,15 @@ const MorrisGame = forwardRef(function MorrisGame({ mode, difficulty, onStateCha
       {removedPiece && (
         <g
           key={`removed-${removedPiece.id}`}
-          className="morris-removed-piece"
           transform={`translate(${NODE_POS[removedPiece.node][0]} ${NODE_POS[removedPiece.node][1]})`}
         >
-          <circle r={18}
-            fill={pieceColor(removedPiece.player)}
-            style={{ filter: `drop-shadow(0 0 8px ${pieceColor(removedPiece.player)}aa)` }}
-          />
-          <circle cx="-5" cy="-5" r={6} fill="rgba(255,255,255,0.22)" />
+          <g className="morris-removed-piece">
+            <circle r={18}
+              fill={pieceColor(removedPiece.player)}
+              style={{ filter: `drop-shadow(0 0 8px ${pieceColor(removedPiece.player)}aa)` }}
+            />
+            <circle cx="-5" cy="-5" r={6} fill="rgba(255,255,255,0.22)" />
+          </g>
         </g>
       )}
 
@@ -316,15 +327,17 @@ const MorrisGame = forwardRef(function MorrisGame({ mode, difficulty, onStateCha
         const isLast   = i === lastNode
         const isSel    = i === selected
         const removable = mustRemove && validTargets.has(i)
-        const isSlide = movingFrom >= 0 && i === lastNode
+        const isAnimatedPlace = lastAction?.type === 'place' && i === lastAction.to
+        const isAnimatedMove = lastAction?.type === 'move' && i === lastAction.to
+        const pieceClass = isAnimatedMove ? 'morris-move-piece' : isAnimatedPlace ? 'morris-place-piece' : 'morris-piece-g'
         return (
           <g key={i}
-            className={isSlide ? 'morris-slide-g' : 'morris-piece-g'}
+            className={pieceClass}
             style={{
               cursor: 'pointer',
-              ...(isSlide ? {
-                '--slide-dx': `${NODE_POS[movingFrom][0] - cx}px`,
-                '--slide-dy': `${NODE_POS[movingFrom][1] - cy}px`,
+              ...(isAnimatedMove ? {
+                '--slide-dx': `${NODE_POS[lastAction.from][0] - cx}px`,
+                '--slide-dy': `${NODE_POS[lastAction.from][1] - cy}px`,
               } : {}),
             }}
             onClick={() => handleNodeClick(i)}
