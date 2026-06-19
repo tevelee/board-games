@@ -64,6 +64,7 @@ const GameHost = forwardRef(function GameHost({
         >
           <Component
             ref={instance => setGameRef(id, instance)}
+            active={activeGameId === id}
             mode={mode}
             difficulty={difficulty}
             settings={activeGameId === id ? settings : undefined}

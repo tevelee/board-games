@@ -2,6 +2,7 @@ import { forwardRef, useEffect, useMemo, useRef, useState } from 'react'
 import { useGameSync } from '../../hooks/useGameSync.js'
 
 const SWIPE_THRESHOLD = 26
+const BOARD_SIZE = 4
 const SCORE_FORMATTER = new Intl.NumberFormat()
 
 const DIRECTION_BUTTONS = [
@@ -36,7 +37,7 @@ export default function createTileMergeGame(config) {
     showNextTile = false,
   } = config
 
-  const TileMergeGame = forwardRef(function TileMergeGame({ mode, difficulty, onStateChange }, ref) {
+  const TileMergeGame = forwardRef(function TileMergeGame({ active = true, mode, difficulty, onStateChange }, ref) {
     const activeDifficulty = normalizeDifficulty(difficulty)
     const bestRef = useRef(readStoredBest(storageKey))
     const [gs, setGs] = useState(() => makeState(activeDifficulty, bestRef.current))
@@ -57,8 +58,26 @@ export default function createTileMergeGame(config) {
     })
 
     useEffect(() => {
-      rootRef.current?.focus()
-    }, [])
+      if (active) rootRef.current?.focus({ preventScroll: true })
+    }, [active])
+
+    useEffect(() => {
+      if (!active) return undefined
+
+      function handleWindowKeyDown(event) {
+        if (event.defaultPrevented || event.repeat || hasModifierKey(event) || shouldIgnoreKeyTarget(event.target)) return
+
+        const direction = KEY_DIRECTIONS[event.key.toLowerCase()]
+        if (!direction) return
+
+        event.preventDefault()
+        rootRef.current?.focus({ preventScroll: true })
+        commitMove(direction)
+      }
+
+      window.addEventListener('keydown', handleWindowKeyDown)
+      return () => window.removeEventListener('keydown', handleWindowKeyDown)
+    }, [active])
 
     useEffect(() => {
       if (gs.difficulty === activeDifficulty) return
@@ -72,11 +91,10 @@ export default function createTileMergeGame(config) {
       writeStoredBest(storageKey, gs.best)
     }, [gs.best])
 
-    const mergedIndexes = useMemo(
-      () => new Set(gs.lastMove?.mergedIndexes ?? []),
-      [gs.lastMove]
+    const renderTiles = useMemo(
+      () => buildRenderTiles(gs.board, gs.lastMove),
+      [gs.board, gs.lastMove]
     )
-    const spawnedIndex = gs.lastMove?.spawnedIndex ?? -1
 
     function commitMove(direction) {
       setGs(state => {
@@ -86,9 +104,16 @@ export default function createTileMergeGame(config) {
         const best = Math.max(bestRef.current, next.best)
         bestRef.current = best
         writeStoredBest(storageKey, best)
-        historyRef.current.push(withBest(state, best))
+        historyRef.current.push(withBest({ ...state, lastMove: null }, best))
 
-        return withBest(next, best)
+        return withBest({
+          ...next,
+          lastMove: {
+            ...(next.lastMove ?? {}),
+            previousBoard: state.board,
+            animationId: `${next.id}-${next.moves}`,
+          },
+        }, best)
       })
     }
 
@@ -136,9 +161,6 @@ export default function createTileMergeGame(config) {
         ref={rootRef}
         tabIndex={0}
         onKeyDown={handleKeyDown}
-        onPointerDown={handlePointerDown}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerCancel}
       >
         <div className="tile-game-shell">
           <div className="tile-game-scoreboard" aria-label={`${title} score`}>
@@ -150,28 +172,49 @@ export default function createTileMergeGame(config) {
 
           <div className="tile-game-main">
             <div className="tile-game-board-wrap">
-              <div className="tile-game-board" role="grid" aria-label={`${title} board`}>
+              <div
+                className="tile-game-board"
+                role="grid"
+                aria-label={`${title} board`}
+                onPointerDown={handlePointerDown}
+                onPointerUp={handlePointerUp}
+                onPointerCancel={handlePointerCancel}
+              >
                 {gs.board.map((value, index) => {
                   const filled = value !== 0
-                  const classes = [
-                    'tile-game-cell',
-                    filled && 'filled',
-                    filled && spawnedIndex === index && 'spawned',
-                    filled && mergedIndexes.has(index) && 'merged',
-                  ].filter(Boolean).join(' ')
 
                   return (
                     <div
                       key={index}
-                      className={classes}
+                      className="tile-game-cell"
                       role="gridcell"
                       aria-label={filled ? getTileLabel(value) : 'Empty cell'}
-                      style={filled ? getTileStyle(value, getTileAppearance) : undefined}
-                    >
-                      {filled && <span>{formatTile(value)}</span>}
-                    </div>
+                    />
                   )
                 })}
+
+                <div className="tile-game-tiles" aria-hidden="true">
+                  {renderTiles.map(tile => {
+                    const classes = [
+                      'tile-game-tile',
+                      tile.sliding && 'sliding',
+                      tile.spawned && 'spawned',
+                      tile.merged && 'merged',
+                      tile.mergeSource && 'merge-source',
+                      tile.mergeResult && 'merge-result',
+                    ].filter(Boolean).join(' ')
+
+                    return (
+                      <div
+                        key={tile.key}
+                        className={classes}
+                        style={getTilePositionStyle(tile, getTileAppearance)}
+                      >
+                        <span>{formatTile(tile.value)}</span>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             </div>
 
@@ -248,6 +291,190 @@ function getTileStyle(value, getTileAppearance) {
     '--tile-text': appearance.text,
     '--tile-font-size': getTileFontSize(value),
   }
+}
+
+function buildRenderTiles(board, lastMove) {
+  const tiles = []
+  const previousBoard = lastMove?.previousBoard
+  const animationId = lastMove?.animationId ?? 'static'
+  const spawnedIndex = lastMove?.spawnedIndex ?? -1
+
+  if (!Array.isArray(previousBoard) || previousBoard.length !== board.length) {
+    board.forEach((value, index) => {
+      if (value === 0) return
+      tiles.push(makeRenderTile({
+        key: `static-${index}-${value}`,
+        index,
+        fromIndex: index,
+        value,
+      }))
+    })
+    return tiles
+  }
+
+  const motions = buildTileMotions(previousBoard, board, lastMove?.direction, spawnedIndex)
+
+  board.forEach((value, index) => {
+    if (value === 0) return
+
+    if (index === spawnedIndex) {
+      tiles.push(makeRenderTile({
+        key: `${animationId}-spawn-${index}-${value}`,
+        index,
+        fromIndex: index,
+        value,
+        spawned: true,
+      }))
+      return
+    }
+
+    const motion = motions.get(index)
+    if (motion?.merged) {
+      motion.sources.forEach((source, sourceIndex) => {
+        tiles.push(makeRenderTile({
+          key: `${animationId}-merge-source-${index}-${sourceIndex}-${source.index}-${source.value}`,
+          index,
+          fromIndex: source.index,
+          value: source.value,
+          mergeSource: true,
+        }))
+      })
+
+      tiles.push(makeRenderTile({
+        key: `${animationId}-merge-result-${index}-${value}`,
+        index,
+        fromIndex: index,
+        value,
+        merged: true,
+        mergeResult: true,
+      }))
+      return
+    }
+
+    const fromIndex = motion?.sources[0]?.index ?? index
+    tiles.push(makeRenderTile({
+      key: `${animationId}-tile-${index}-${fromIndex}-${value}`,
+      index,
+      fromIndex,
+      value,
+      sliding: fromIndex !== index,
+    }))
+  })
+
+  return tiles
+}
+
+function makeRenderTile(tile) {
+  return {
+    sliding: false,
+    spawned: false,
+    merged: false,
+    mergeSource: false,
+    mergeResult: false,
+    ...tile,
+  }
+}
+
+function buildTileMotions(previousBoard, board, direction, spawnedIndex) {
+  const motions = new Map()
+
+  for (const indexes of getLines(direction)) {
+    const sources = indexes
+      .filter(index => previousBoard[index] !== 0)
+      .map(index => ({ index, value: previousBoard[index] }))
+    const destinations = indexes
+      .filter(index => index !== spawnedIndex && board[index] !== 0)
+      .map(index => ({ index, value: board[index] }))
+    let sourceCursor = 0
+
+    for (const destination of destinations) {
+      const source = sources[sourceCursor]
+      if (!source) break
+
+      const nextSource = sources[sourceCursor + 1]
+      const merged = Boolean(
+        nextSource &&
+        source.value + nextSource.value === destination.value &&
+        source.value !== destination.value
+      )
+      const motionSources = merged ? [source, nextSource] : [source]
+
+      motions.set(destination.index, {
+        merged,
+        sources: motionSources,
+      })
+      sourceCursor += motionSources.length
+    }
+  }
+
+  return motions
+}
+
+function getTilePositionStyle(tile, getTileAppearance) {
+  const style = getTileStyle(tile.value, getTileAppearance)
+  const [row, col] = positionOf(tile.index)
+  const [fromRow, fromCol] = positionOf(tile.fromIndex)
+
+  return {
+    ...style,
+    gridColumnStart: col + 1,
+    gridRowStart: row + 1,
+    '--tile-from-x': getTranslateOffset(fromCol - col),
+    '--tile-from-y': getTranslateOffset(fromRow - row),
+  }
+}
+
+function getTranslateOffset(delta) {
+  if (delta === 0) return '0px'
+
+  const magnitude = Math.abs(delta)
+  const gap = Array.from({ length: magnitude }, () => 'var(--tile-gap)')
+    .join(delta > 0 ? ' + ' : ' - ')
+  return delta > 0
+    ? `calc(${magnitude * 100}% + ${gap})`
+    : `calc(-${magnitude * 100}% - ${gap})`
+}
+
+function getLines(direction) {
+  if (direction === 'left') {
+    return Array.from({ length: BOARD_SIZE }, (_, row) =>
+      Array.from({ length: BOARD_SIZE }, (_, col) => row * BOARD_SIZE + col)
+    )
+  }
+
+  if (direction === 'right') {
+    return Array.from({ length: BOARD_SIZE }, (_, row) =>
+      Array.from({ length: BOARD_SIZE }, (_, offset) => row * BOARD_SIZE + BOARD_SIZE - 1 - offset)
+    )
+  }
+
+  if (direction === 'up') {
+    return Array.from({ length: BOARD_SIZE }, (_, col) =>
+      Array.from({ length: BOARD_SIZE }, (_, row) => row * BOARD_SIZE + col)
+    )
+  }
+
+  if (direction === 'down') {
+    return Array.from({ length: BOARD_SIZE }, (_, col) =>
+      Array.from({ length: BOARD_SIZE }, (_, offset) => (BOARD_SIZE - 1 - offset) * BOARD_SIZE + col)
+    )
+  }
+
+  return []
+}
+
+function positionOf(index) {
+  return [Math.floor(index / BOARD_SIZE), index % BOARD_SIZE]
+}
+
+function hasModifierKey(event) {
+  return event.altKey || event.ctrlKey || event.metaKey
+}
+
+function shouldIgnoreKeyTarget(target) {
+  if (document.querySelector('[role="dialog"], .select-menu, .action-menu')) return true
+  if (!(target instanceof Element)) return false
+  return Boolean(target.closest('input, textarea, select, [contenteditable="true"], .bottom-bar, .select-menu, .action-menu, [role="dialog"]'))
 }
 
 function getTileFontSize(value) {

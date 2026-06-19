@@ -2378,15 +2378,18 @@ body {
 }
 
 .tile-game-board {
+  --tile-gap: 10px;
+  --tile-padding: 10px;
+  position: relative;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   grid-template-rows: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  gap: var(--tile-gap);
   width: min(100%, 58vh, 500px);
   aspect-ratio: 1;
   min-width: 0;
   min-height: 0;
-  padding: 10px;
+  padding: var(--tile-padding);
   background: #1f252c;
   border: 2px solid #46515d;
   border-radius: var(--radius);
@@ -2411,20 +2414,41 @@ body {
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
 }
 
-.tile-game-cell.filled,
+.tile-game-tiles {
+  position: absolute;
+  inset: var(--tile-padding);
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(4, minmax(0, 1fr));
+  gap: var(--tile-gap);
+  pointer-events: none;
+}
+
+.tile-game-tile,
 .tile-game-next-tile {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
   color: var(--tile-text);
   background:
     linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0) 42%),
     var(--tile-bg);
-  border-color: var(--tile-border);
+  border: 1px solid var(--tile-border);
+  border-radius: var(--radius);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.32),
     inset 0 -2px 0 rgba(0,0,0,0.2),
     0 5px 12px rgba(0,0,0,0.28);
 }
 
-.tile-game-cell span,
+.tile-game-tile {
+  will-change: transform;
+}
+
+.tile-game-tile span,
 .tile-game-next-tile span {
   display: block;
   max-width: 100%;
@@ -2438,12 +2462,22 @@ body {
   text-overflow: clip;
 }
 
-.tile-game-cell.spawned {
+.tile-game-tile.sliding {
+  animation: tile-game-slide 160ms ease-out;
+}
+
+.tile-game-tile.spawned {
   animation: tile-game-pop 190ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.tile-game-cell.merged span {
-  animation: tile-game-merge 180ms ease-out;
+.tile-game-tile.merge-source {
+  z-index: 2;
+  animation: tile-game-slide-away 160ms ease-out forwards;
+}
+
+.tile-game-tile.merge-result {
+  z-index: 3;
+  animation: tile-game-merge-result 250ms ease-out both;
 }
 
 .tile-game-panel {
@@ -2560,10 +2594,21 @@ body {
   100% { transform: scale(1); }
 }
 
-@keyframes tile-game-merge {
-  0%   { transform: scale(0.88); }
-  70%  { transform: scale(1.12); }
-  100% { transform: scale(1); }
+@keyframes tile-game-slide {
+  from { transform: translate(var(--tile-from-x), var(--tile-from-y)); }
+  to   { transform: translate(0, 0); }
+}
+
+@keyframes tile-game-slide-away {
+  0%   { transform: translate(var(--tile-from-x), var(--tile-from-y)); opacity: 1; }
+  78%  { opacity: 1; }
+  100% { transform: translate(0, 0); opacity: 0; }
+}
+
+@keyframes tile-game-merge-result {
+  0%, 58% { transform: scale(0.82); opacity: 0; }
+  72%     { transform: scale(1.12); opacity: 1; }
+  100%    { transform: scale(1); }
 }
 
 /* ── Block Puzzle ───────────────────────────────────────────────────────── */
@@ -3235,8 +3280,8 @@ body {
   }
   .tile-game-board {
     width: min(100%, 50vh);
-    gap: 7px;
-    padding: 8px;
+    --tile-gap: 7px;
+    --tile-padding: 8px;
   }
   .tile-game-panel {
     grid-template-columns: auto auto;
@@ -3479,8 +3524,10 @@ body {
   .ataxx-converted-piece,
   .ataxx-jump-piece,
   .ataxx-clone-piece,
-  .tile-game-cell.spawned,
-  .tile-game-cell.merged span,
+  .tile-game-tile.sliding,
+  .tile-game-tile.spawned,
+  .tile-game-tile.merge-source,
+  .tile-game-tile.merge-result,
   .ttt-mark,
   .ttt-cell.removed-mark::before,
   .utt-mark,
@@ -3488,6 +3535,9 @@ body {
   .block-puzzle-gem,
   .block-puzzle-cell.line-cleared::after {
     animation: none;
+  }
+  .tile-game-tile.merge-source {
+    display: none;
   }
   .tile-game-control,
   .ttt-cell,
