@@ -42,6 +42,7 @@ export default function App() {
   const [uiState,    setUiState]      = useState(createGameUiState)
   const [settingsByGame, setSettingsByGame] = useState({})
   const [gameOverDismissed, setGameOverDismissed] = useState(false)
+  const [rulesOpen, setRulesOpen] = useState(false)
   const gameHostRef = useRef(null)
   const activeGame  = game ? playableGamesById[game] : null
   const activeSettings = getGameSettings(activeGame, game ? settingsByGame[game] : null)
@@ -59,6 +60,10 @@ export default function App() {
   const handleUndo = useCallback(() => {
     gameHostRef.current?.undoActive()
   }, [])
+
+  const handleShowRules = useCallback(() => {
+    if (activeGame?.rules) setRulesOpen(true)
+  }, [activeGame])
 
   const handleSettingChange = useCallback((settingId, value) => {
     if (!game) return
@@ -93,6 +98,10 @@ export default function App() {
   useEffect(() => {
     setGameOverDismissed(false)
   }, [game, uiState.winner])
+
+  useEffect(() => {
+    setRulesOpen(false)
+  }, [game])
 
   const [statusText, statusClass] = deriveStatus(uiState, activeMode)
   const gameOver = game && uiState.winner
@@ -138,6 +147,14 @@ export default function App() {
             onLibrary={handleShowLibrary}
           />
         )}
+
+        {rulesOpen && activeGame?.rules && (
+          <RulesDialog
+            title={activeGame.title}
+            rules={activeGame.rules}
+            onClose={() => setRulesOpen(false)}
+          />
+        )}
       </div>
 
       {game && (
@@ -155,6 +172,8 @@ export default function App() {
           onDifficultyChange={setDifficulty}
           onNewGame={handleNewGame}
           onUndo={handleUndo}
+          hasRules={Boolean(activeGame?.rules)}
+          onShowRules={handleShowRules}
         />
       )}
     </div>
@@ -247,6 +266,41 @@ function GameOverOverlay({ copy, scores, scoreLabels, mode, onNewGame, onReview,
           <button className="btn-result-secondary" type="button" onClick={onReview}>Review Board</button>
           <button className="btn-result-ghost" type="button" onClick={onLibrary}>Library</button>
         </div>
+      </div>
+    </div>
+  )
+}
+
+function RulesDialog({ title, rules, onClose }) {
+  useEffect(() => {
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') onClose()
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
+  return (
+    <div className="rules-layer" role="presentation" onClick={onClose}>
+      <div
+        className="rules-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="rules-title"
+        onClick={event => event.stopPropagation()}
+      >
+        <button className="rules-close" type="button" aria-label="Close rules" onClick={onClose}>
+          <span aria-hidden="true">x</span>
+        </button>
+        <div className="rules-kicker">Quick rules</div>
+        <h2 id="rules-title">{title}</h2>
+        <p>{rules.objective}</p>
+        <ul>
+          {rules.bullets.map((rule, index) => (
+            <li key={index}>{rule}</li>
+          ))}
+        </ul>
       </div>
     </div>
   )

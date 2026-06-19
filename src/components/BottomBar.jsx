@@ -191,7 +191,7 @@ export default function BottomBar({
   mode, difficulty, scores, hint,
   gameModes = [], scoreLabels, gameOptions = [], gameSettings = {}, onGameSettingChange,
   onModeChange, onDifficultyChange, onNewGame,
-  onUndo,
+  onUndo, onShowRules, hasRules = false,
 }) {
   const solo = mode === 'solo'
   const pvp = mode === 'pvp'
@@ -247,6 +247,18 @@ export default function BottomBar({
             options={DIFFICULTY_OPTIONS}
             onChange={onDifficultyChange}
           />
+        )}
+
+        {hasRules && (
+          <button
+            className="btn-rules"
+            type="button"
+            aria-label="Show rules"
+            title="Rules"
+            onClick={onShowRules}
+          >
+            <span aria-hidden="true">?</span>
+          </button>
         )}
 
         <ActionMenu onUndo={onUndo} />

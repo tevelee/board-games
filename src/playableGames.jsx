@@ -18,24 +18,70 @@ export const playableGames = [
     ...gamesById.gomoku,
     Component: GomokuGame,
     hint: 'Drag · Pinch/scroll to zoom · Tap to place',
+    rules: {
+      objective: 'Place five stones in a straight line before your opponent does.',
+      bullets: [
+        'Tap any empty intersection to place your stone.',
+        'Lines can run horizontally, vertically, or diagonally.',
+        'The first player to make five or more connected stones wins.',
+        'If the board fills with no five-in-a-row, the game is a draw.',
+      ],
+    },
   },
   {
     ...gamesById.morris,
     Component: MorrisGame,
     hint: 'Tap a node to place · Tap piece then target to move',
+    rules: {
+      objective: 'Make mills, remove enemy stones, and leave the opponent unable to play.',
+      bullets: [
+        'Place all 9 stones, then move one stone per turn.',
+        'A mill is 3 of your stones in a row on connected board nodes.',
+        'Making a mill removes one opponent stone that is not inside a mill.',
+        'With exactly 3 stones left, you may jump to any empty node.',
+        'Win when the opponent has fewer than 3 stones or no legal move.',
+      ],
+    },
   },
   {
     ...gamesById.othello,
     Component: OthelloGame,
+    rules: {
+      objective: 'Finish with more discs than your opponent.',
+      bullets: [
+        'Place a disc so at least one enemy line is trapped between your new disc and another of yours.',
+        'Trapped discs flip to your color in every valid direction.',
+        'If you have no legal move, your turn is passed.',
+        'The game ends when neither player can move.',
+      ],
+    },
   },
   {
     ...gamesById.connect4,
     Component: Connect4Game,
+    rules: {
+      objective: 'Connect four of your discs in a row.',
+      bullets: [
+        'Tap a column to drop your disc into the lowest open slot.',
+        'Four can be horizontal, vertical, or diagonal.',
+        'Block threats while building your own line.',
+        'A full board with no four-in-a-row is a draw.',
+      ],
+    },
   },
   {
     ...gamesById.ataxx,
     Component: AtaxxGame,
     hint: 'Tap a piece · Clone nearby or jump two cells',
+    rules: {
+      objective: 'Control more cells than your opponent when no moves remain.',
+      bullets: [
+        'Move to a neighboring cell to clone your piece.',
+        'Jump two cells to move the original piece instead.',
+        'After each move, adjacent enemy pieces convert to your color.',
+        'If a player has no legal move, the turn passes.',
+      ],
+    },
     options: [
       {
         id: 'boardLayout',
@@ -52,11 +98,29 @@ export const playableGames = [
     ...gamesById.checkers,
     Component: CheckersGame,
     hint: 'Captures are forced · Chain jumps continue',
+    rules: {
+      objective: 'Capture all opposing pieces or block every opposing move.',
+      bullets: [
+        'Men move diagonally forward on dark squares.',
+        'Jump over an adjacent enemy piece to capture it.',
+        'Captures are mandatory, and extra jumps with the same piece continue.',
+        'Reach the far row to become a king, which moves diagonally both ways.',
+      ],
+    },
   },
   {
     ...gamesById['dots-boxes'],
     Component: DotsBoxesGame,
     hint: 'Tap an open edge · Completing a box earns another turn',
+    rules: {
+      objective: 'Claim more boxes than your opponent.',
+      bullets: [
+        'Tap one open edge between two dots each turn.',
+        'Completing the fourth side of a box claims it for you.',
+        'Claiming at least one box gives you another turn.',
+        'The game ends when every edge is drawn.',
+      ],
+    },
     options: [
       {
         id: 'boardSize',
@@ -76,12 +140,31 @@ export const playableGames = [
     Component: BackgammonGame,
     hint: 'Roll dice · Tap a checker, entry, or bear-off tray',
     scoreLabels: ['P1', 'P2'],
+    rules: {
+      objective: 'Move all 15 checkers home, then bear them off first.',
+      bullets: [
+        'Roll dice, then move checkers by the shown numbers.',
+        'A point with two or more enemy checkers is blocked.',
+        'Landing on one enemy checker sends it to the bar.',
+        'Checkers on the bar must re-enter before any other move.',
+        'Once all your checkers are home, move them off the board.',
+      ],
+    },
   },
   {
     ...gamesById.nonogram,
     Component: NonogramGame,
     hint: 'Fill clue runs · Mark blanks · Right-click marks',
     scoreLabels: ['Filled', 'Mistakes'],
+    rules: {
+      objective: 'Reveal the hidden picture by satisfying every row and column clue.',
+      bullets: [
+        'Numbers show filled runs in order for that row or column.',
+        'There must be at least one blank between separate runs.',
+        'Fill cells you know are part of a run.',
+        'Mark cells you know are blank to avoid mistakes.',
+      ],
+    },
     options: [
       {
         id: 'boardSize',
@@ -102,18 +185,46 @@ export const playableGames = [
     Component: BlockPuzzleGame,
     hint: 'Drag a piece onto the board · Complete rows or columns',
     scoreLabels: ['Score', 'Best'],
+    rules: {
+      objective: 'Score as much as possible before no tray piece fits.',
+      bullets: [
+        'Drag one of the three tray pieces onto empty board cells.',
+        'Full rows or columns clear and award bonus points.',
+        'After all three tray pieces are placed, a new tray appears.',
+        'The run ends when none of the available pieces can fit.',
+      ],
+    },
   },
   {
     ...gamesById.sudoku,
     Component: SudokuGame,
     hint: 'Fill every row, column, and 3x3 box',
     scoreLabels: ['Filled', 'Mistakes'],
+    rules: {
+      objective: 'Fill the grid so every row, column, and 3x3 box contains 1-9.',
+      bullets: [
+        'Select an empty cell, then choose a number.',
+        'Each number can appear once per row, column, and box.',
+        'Use notes to track candidates when you are unsure.',
+        'The puzzle is solved when every cell is filled correctly.',
+      ],
+    },
   },
   {
     ...gamesById.hive,
     Component: HiveGame,
     hint: 'Tap a reserve tile · Surround the opposing queen',
     scoreLabels: ['P1', 'P2'],
+    rules: {
+      objective: 'Surround the opposing queen before your own queen is surrounded.',
+      bullets: [
+        'Place reserve pieces touching your own hive pieces, not the opponent.',
+        'Your queen must be placed by your fourth turn.',
+        'After your queen is placed, top pieces can move by their piece rules.',
+        'Moves may not split the hive into separate groups.',
+        'If both queens are surrounded at once, the game is a draw.',
+      ],
+    },
   },
 ]
 
