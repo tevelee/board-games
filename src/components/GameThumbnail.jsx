@@ -9,7 +9,7 @@ const PAPER = '#d8c7a4'
 const CARD = '#f6ead0'
 const FONT = 'Inter, ui-sans-serif, system-ui, sans-serif'
 
-export default function GameThumbnail({ type }) {
+export default function GameThumbnail({ type, className = '' }) {
   const base = `thumb-${useId().replace(/:/g, '')}`
   const paint = name => `url(#${base}-${name})`
 
@@ -733,7 +733,7 @@ export default function GameThumbnail({ type }) {
   }
 
   return (
-    <svg className="tile-graphic" viewBox="0 0 260 112" aria-hidden="true">
+    <svg className={`tile-graphic ${className}`.trim()} viewBox="0 0 260 112" aria-hidden="true">
       <defs>
         <linearGradient id={`${base}-table`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="#17232b" />
