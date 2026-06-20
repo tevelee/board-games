@@ -1,4 +1,4 @@
-import { useRef, useState, forwardRef } from 'react'
+import { useEffect, useRef, useState, forwardRef } from 'react'
 import { useGameSync } from '../../hooks/useGameSync.js'
 import { P1_COLOR, P2_COLOR, playerColor as pieceColor } from '../shared/colors.js'
 import { incrementPlayerScore } from '../shared/runtime.js'
