@@ -4,6 +4,7 @@ import OthelloGame from './games/othello/Game.jsx'
 import Connect4Game from './games/connect4/Game.jsx'
 import AtaxxGame from './games/ataxx/Game.jsx'
 import HexGame from './games/hex/Game.jsx'
+import PentagoGame from './games/pentago/Game.jsx'
 import { BOARD_LAYOUTS as ATAXX_BOARD_LAYOUTS } from './games/ataxx/logic.js'
 import CheckersGame from './games/checkers/Game.jsx'
 import InternationalCheckersGame from './games/international-checkers/Game.jsx'
@@ -114,6 +115,21 @@ export const playableGames = [
         'Player 2 connects the red top and bottom sides.',
         'Connected stones touch along hex edges, not just corners.',
         'Hex cannot end in a draw; one player will complete a connection.',
+      ],
+    },
+  },
+  {
+    ...gamesById.pentago,
+    Component: PentagoGame,
+    hint: 'Place a marble, then rotate a quadrant',
+    rules: {
+      objective: 'Make five marbles in a row before your opponent does.',
+      bullets: [
+        'Place one marble on any empty space.',
+        'If that placement makes five in a row, you win immediately.',
+        'Otherwise rotate one quadrant 90 degrees clockwise or counterclockwise.',
+        'Five can run horizontally, vertically, or diagonally across quadrants.',
+        'If one rotation gives both players five in a row, the game is a draw.',
       ],
     },
   },

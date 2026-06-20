@@ -314,7 +314,7 @@ export const games = [
     id: 'pentago',
     title: 'Pentago',
     category: 'Abstract Strategy',
-    status: 'idea',
+    status: 'playable',
     modes: ['vs-ai', 'local-2p'],
     tags: ['abstract', 'grid', 'turn-based', 'quick'],
     complexity: 'Medium',

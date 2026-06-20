@@ -2654,6 +2654,249 @@ button.mastermind-peg:active:not(:disabled) {
   100% { transform: scale(1); opacity: 1; }
 }
 
+/* ── Pentago ───────────────────────────────────────────────────────────── */
+.pentago-game {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding: 16px;
+  background:
+    linear-gradient(160deg, rgba(88,166,255,0.13), rgba(227,179,65,0.09) 45%, rgba(248,81,73,0.1)),
+    #0d1117;
+}
+
+.pentago-shell {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.pentago-board {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  width: min(76vh, 640px, calc(100vw - 34px));
+  aspect-ratio: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: 12px;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.01)),
+    #101820;
+  border: 2px solid #46515d;
+  border-radius: var(--radius);
+  box-shadow:
+    0 18px 44px rgba(0,0,0,0.34),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.pentago-board.busy {
+  cursor: wait;
+}
+
+.pentago-quadrant {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  padding: 8px;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.055), rgba(255,255,255,0) 48%),
+    #151f29;
+  border: 1px solid #34404d;
+  border-radius: var(--radius);
+  transition: border-color 0.16s, box-shadow 0.16s, background 0.16s;
+}
+
+.pentago-quadrant.can-rotate {
+  border-color: rgba(var(--pentago-current-rgb), 0.76);
+  background:
+    linear-gradient(135deg, rgba(var(--pentago-current-rgb), 0.1), rgba(255,255,255,0) 52%),
+    #152231;
+}
+
+.pentago-quadrant.last-rotated {
+  box-shadow: inset 0 0 0 2px rgba(227,179,65,0.24);
+}
+
+.pentago-cells {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+}
+
+.pentago-cell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid #2b3540;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 42% 36%, #22303c 0 26%, #101820 62%, #090d12 100%);
+  font: inherit;
+  cursor: default;
+  outline: none;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s, transform 0.1s;
+}
+
+.pentago-cell::after {
+  content: "";
+  position: absolute;
+  inset: 25%;
+  border: 2px solid rgba(var(--pentago-current-rgb), 0.58);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.pentago-cell.legal {
+  cursor: pointer;
+}
+
+.pentago-cell.legal:hover,
+.pentago-cell.legal:focus-visible {
+  border-color: rgba(var(--pentago-current-rgb), 0.86);
+  background:
+    radial-gradient(circle at 42% 36%, #28384a 0 26%, #142131 62%, #0a1017 100%);
+}
+
+.pentago-cell.legal:hover::after,
+.pentago-cell.legal:focus-visible::after {
+  opacity: 1;
+  transform: scale(1.08);
+}
+
+.pentago-cell:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.pentago-cell.filled {
+  border-color: #3a4653;
+}
+
+.pentago-cell.pending {
+  box-shadow: inset 0 0 0 2px rgba(227,179,65,0.48);
+}
+
+.pentago-cell.last-move:not(.winning) {
+  box-shadow: inset 0 0 0 2px rgba(227,179,65,0.42);
+}
+
+.pentago-cell.winning {
+  border-color: #3fb950;
+  box-shadow:
+    inset 0 0 0 2px rgba(63,185,80,0.32),
+    0 0 18px rgba(63,185,80,0.18);
+}
+
+.pentago-marble {
+  display: block;
+  width: 76%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255,255,255,0.72), rgba(255,255,255,0.18) 19%, rgba(var(--marble-rgb), 0.96) 42%, var(--marble-color) 74%, rgba(0,0,0,0.42) 100%);
+  box-shadow:
+    0 7px 12px rgba(0,0,0,0.36),
+    inset -5px -7px 9px rgba(0,0,0,0.24),
+    inset 4px 4px 7px rgba(255,255,255,0.18);
+  animation: pentago-marble-pop 190ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pentago-cell.winning .pentago-marble {
+  animation: pentago-win-pulse 900ms ease-in-out infinite;
+}
+
+.pentago-rotate-controls {
+  position: absolute;
+  inset: 8px;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: repeat(2, 42px);
+  place-content: center;
+  gap: 8px;
+  background: rgba(13,17,23,0.48);
+  border-radius: calc(var(--radius) - 1px);
+  backdrop-filter: blur(2px);
+}
+
+.pentago-rotate-button {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  color: var(--pentago-current);
+  background: rgba(22,27,34,0.94);
+  border: 1px solid rgba(var(--pentago-current-rgb), 0.5);
+  border-radius: 50%;
+  cursor: pointer;
+  outline: none;
+  transition: color 0.15s, border-color 0.15s, background 0.15s, transform 0.12s, box-shadow 0.15s;
+}
+
+.pentago-rotate-button:hover,
+.pentago-rotate-button:focus-visible {
+  color: #ffffff;
+  border-color: rgba(var(--pentago-current-rgb), 0.92);
+  background: rgba(var(--pentago-current-rgb), 0.24);
+  box-shadow: 0 0 0 3px rgba(var(--pentago-current-rgb), 0.14);
+}
+
+.pentago-rotate-button:active {
+  transform: scale(0.94);
+}
+
+.pentago-rotate-button svg,
+.pentago-quadrant-status svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pentago-quadrant-status {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  color: #f2cc60;
+  background: rgba(13,17,23,0.88);
+  border: 1px solid rgba(227,179,65,0.34);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+@keyframes pentago-marble-pop {
+  0%   { transform: scale(0.58); opacity: 0; }
+  72%  { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+@keyframes pentago-win-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.1); opacity: 0.88; }
+}
+
 /* ── Tile Merge Games ───────────────────────────────────────────────────── */
 .tile-game {
   position: relative;
@@ -3925,6 +4168,20 @@ button.mastermind-peg:active:not(:disabled) {
     width: min(100%, 64vh);
   }
 
+  .pentago-board {
+    width: min(100%, 62vh);
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .pentago-quadrant {
+    padding: 6px;
+  }
+
+  .pentago-cells {
+    gap: 4px;
+  }
+
   .tile-game-shell {
     width: min(100%, 620px);
   }
@@ -3988,6 +4245,7 @@ button.mastermind-peg:active:not(:disabled) {
   .ttt-cell.removed-mark::before,
   .utt-mark,
   .utt-board-owner,
+  .pentago-marble,
   .mastermind-peg.filled,
   .block-puzzle-gem,
   .block-puzzle-cell.line-cleared::after {
@@ -4000,6 +4258,9 @@ button.mastermind-peg:active:not(:disabled) {
   .ttt-cell,
   .utt-cell,
   .utt-small-board,
+  .pentago-cell,
+  .pentago-quadrant,
+  .pentago-rotate-button,
   button.mastermind-peg,
   .mastermind-color,
   .mastermind-action,

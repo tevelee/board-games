@@ -34,6 +34,7 @@ Each game should eventually have:
 | Tic Tac Toe | Grid games | vs AI, Local 2P | Classic 3x3 win-three game |
 | Ultimate Tic-Tac-Toe | Grid games | vs AI, Local 2P | Nine linked boards with target-board routing |
 | Vanishing Tic Tac Toe | Grid games | vs AI, Local 2P | Three-mark limit where each player's oldest mark disappears |
+| Pentago | Abstract strategy | vs AI, Local 2P | Place-and-rotate five-in-a-row tactics |
 | Backgammon | Race/table games | vs AI, Local 2P | Dice movement, hits, bar entry, and bearing off |
 | Nonogram | Puzzle | Solo | Generated picture puzzles with selectable 8x8 through 20x20 grids |
 | Threes | Puzzle | Solo | One-cell swipe/merge grid with 1, 2, and 3+ tiles |
@@ -59,7 +60,6 @@ Each game should eventually have:
 
 These fit the same compact, replayable, mostly turn-based direction:
 
-- Pentago
 - Quarto
 - Quoridor
 - Minesweeper
