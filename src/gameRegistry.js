@@ -325,7 +325,7 @@ export const games = [
     id: 'quarto',
     title: 'Quarto',
     category: 'Abstract Strategy',
-    status: 'idea',
+    status: 'playable',
     modes: ['vs-ai', 'local-2p'],
     tags: ['abstract', 'grid', 'turn-based', 'quick'],
     complexity: 'Medium',

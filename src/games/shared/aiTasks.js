@@ -11,6 +11,7 @@ const MAIN_THREAD_MODULES = {
   morris: () => import('../morris/ai.js'),
   othello: () => import('../othello/ai.js'),
   pentago: () => import('../pentago/ai.js'),
+  quarto: () => import('../quarto/ai.js'),
   'tic-tac-toe': () => import('../tic-tac-toe/ai.js'),
   'ultimate-tic-tac-toe': () => import('../ultimate-tic-tac-toe/ai.js'),
 }

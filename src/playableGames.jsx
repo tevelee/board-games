@@ -5,6 +5,7 @@ import Connect4Game from './games/connect4/Game.jsx'
 import AtaxxGame from './games/ataxx/Game.jsx'
 import HexGame from './games/hex/Game.jsx'
 import PentagoGame from './games/pentago/Game.jsx'
+import QuartoGame from './games/quarto/Game.jsx'
 import { BOARD_LAYOUTS as ATAXX_BOARD_LAYOUTS } from './games/ataxx/logic.js'
 import CheckersGame from './games/checkers/Game.jsx'
 import InternationalCheckersGame from './games/international-checkers/Game.jsx'
@@ -130,6 +131,21 @@ export const playableGames = [
         'Otherwise rotate one quadrant 90 degrees clockwise or counterclockwise.',
         'Five can run horizontally, vertically, or diagonally across quadrants.',
         'If one rotation gives both players five in a row, the game is a draw.',
+      ],
+    },
+  },
+  {
+    ...gamesById.quarto,
+    Component: QuartoGame,
+    hint: 'Choose a piece for the opponent · Place the piece you receive',
+    rules: {
+      objective: 'Place the fourth piece in a row whose pieces share at least one attribute.',
+      bullets: [
+        'Every piece is unique: tall or short, light or dark, round or square, solid or hollow.',
+        'On your turn, place the piece chosen for you.',
+        'After placing, choose any remaining piece for your opponent to place.',
+        'Four pieces in a row win if they share any one attribute.',
+        'Rows, columns, and the two diagonals count.',
       ],
     },
   },

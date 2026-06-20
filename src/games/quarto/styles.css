@@ -1,0 +1,413 @@
+.quarto-game {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 0;
+  padding: 16px;
+  overflow-y: auto;
+  color: var(--text);
+  background:
+    linear-gradient(180deg, rgba(227,179,65,0.08), rgba(88,166,255,0.055) 42%, rgba(63,185,80,0.05)),
+    var(--bg);
+  outline: none;
+}
+
+.quarto-shell {
+  display: grid;
+  grid-template-columns: minmax(320px, 560px) 254px;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  width: 100%;
+  max-width: 900px;
+  min-height: 0;
+}
+
+.quarto-board-panel {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+}
+
+.quarto-board {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  width: min(70vh, 560px, calc(100vw - 326px));
+  aspect-ratio: 1;
+  padding: 10px;
+  background:
+    linear-gradient(145deg, #c89759, #875828 58%, #4b2c16),
+    #875828;
+  border: 1px solid #b78a56;
+  border-radius: var(--radius);
+  box-shadow:
+    0 22px 46px rgba(0,0,0,0.34),
+    inset 0 1px 0 rgba(255,255,255,0.18);
+}
+
+.quarto-cell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+  aspect-ratio: 1;
+  padding: 0;
+  overflow: hidden;
+  background:
+    linear-gradient(145deg, rgba(255,255,255,0.08), rgba(0,0,0,0.1)),
+    #22170f;
+  border: 1px solid rgba(255,236,194,0.16);
+  border-radius: 6px;
+  box-shadow: inset 0 2px 7px rgba(0,0,0,0.44);
+  cursor: default;
+  outline: none;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s, transform 0.12s;
+}
+
+.quarto-cell:not(:disabled) {
+  cursor: pointer;
+}
+
+.quarto-cell.legal-place::after {
+  content: "";
+  width: 20%;
+  aspect-ratio: 1;
+  border: 2px solid var(--quarto-p1);
+  border-radius: 50%;
+  opacity: 0.58;
+}
+
+.quarto-cell.legal-place:hover,
+.quarto-cell.legal-place:focus-visible {
+  border-color: var(--quarto-p1);
+  background:
+    linear-gradient(145deg, rgba(88,166,255,0.16), rgba(0,0,0,0.12)),
+    #251b12;
+  box-shadow:
+    inset 0 2px 7px rgba(0,0,0,0.38),
+    0 0 0 3px rgba(88,166,255,0.2);
+}
+
+.quarto-cell.occupied {
+  background:
+    linear-gradient(145deg, rgba(255,255,255,0.04), rgba(0,0,0,0.16)),
+    #18120e;
+}
+
+.quarto-cell.last-place {
+  border-color: #e3b341;
+}
+
+.quarto-cell.winning {
+  border-color: var(--win);
+  box-shadow:
+    inset 0 2px 7px rgba(0,0,0,0.34),
+    0 0 0 3px rgba(63,185,80,0.22);
+}
+
+.quarto-panel {
+  display: grid;
+  align-content: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px;
+  background: rgba(22,27,34,0.94);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 18px 44px rgba(0,0,0,0.28);
+}
+
+.quarto-turn-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 11px 12px;
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.quarto-turn-card div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.quarto-turn-card strong {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 0.96rem;
+  line-height: 1.12;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quarto-turn-card span:not(.quarto-turn-dot) {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 750;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.quarto-turn-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.06);
+}
+
+.quarto-turn-dot.player-1 { background: var(--quarto-p1); }
+.quarto-turn-dot.player-2 { background: var(--quarto-p2); }
+
+.quarto-panel-label {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.quarto-hand {
+  display: grid;
+  gap: 8px;
+}
+
+.quarto-hand-piece {
+  display: grid;
+  place-items: center;
+  height: 82px;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: var(--radius);
+}
+
+.quarto-hand-piece.empty {
+  color: #6e7681;
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.quarto-reserve-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.quarto-reserve-head strong {
+  color: #c9d1d9;
+  font-size: 0.78rem;
+}
+
+.quarto-reserve {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.quarto-piece-slot {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  aspect-ratio: 1;
+  padding: 0;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  outline: none;
+}
+
+button.quarto-piece-slot {
+  cursor: default;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s, transform 0.12s;
+}
+
+button.quarto-piece-slot.selectable {
+  cursor: pointer;
+}
+
+button.quarto-piece-slot.selectable:hover,
+button.quarto-piece-slot.selectable:focus-visible,
+.quarto-piece-slot.last-select {
+  border-color: #e3b341;
+  background: #1d222a;
+  box-shadow: 0 0 0 3px rgba(227,179,65,0.18);
+}
+
+button.quarto-piece-slot.selectable:active {
+  transform: scale(0.96);
+}
+
+.quarto-piece-slot.spent {
+  background:
+    linear-gradient(135deg, transparent 47%, rgba(110,118,129,0.34) 48%, rgba(110,118,129,0.34) 52%, transparent 53%),
+    #10151d;
+  border-style: dashed;
+  opacity: 0.55;
+}
+
+.quarto-counts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.quarto-counts div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 9px 10px;
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.quarto-counts strong {
+  color: var(--text);
+  font-size: 1rem;
+  line-height: 1.1;
+}
+
+.quarto-counts span {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 750;
+}
+
+.quarto-piece {
+  --piece-size: 60%;
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--piece-size);
+  aspect-ratio: 1;
+  border: 1px solid rgba(255,255,255,0.22);
+  box-shadow:
+    inset 0 -7px 10px rgba(0,0,0,0.24),
+    0 8px 12px rgba(0,0,0,0.28);
+  animation: quarto-piece-pop 170ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.quarto-piece.on-board {
+  --piece-size: 64%;
+}
+
+.quarto-piece.height-tall {
+  --piece-size: 74%;
+}
+
+.quarto-piece.height-short {
+  --piece-size: 56%;
+}
+
+.quarto-piece.shape-round {
+  border-radius: 50%;
+}
+
+.quarto-piece.shape-square {
+  border-radius: 18%;
+}
+
+.quarto-piece.tone-light {
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255,255,255,0.92), rgba(255,255,255,0.18) 28%, transparent 29%),
+    linear-gradient(145deg, #ead8b4, #cba46b 62%, #875828);
+}
+
+.quarto-piece.tone-dark {
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255,255,255,0.28), rgba(255,255,255,0.05) 27%, transparent 28%),
+    linear-gradient(145deg, #45515d, #1f2832 60%, #070b10);
+}
+
+.quarto-piece.height-tall::before {
+  content: "";
+  position: absolute;
+  left: 17%;
+  right: 17%;
+  bottom: -9%;
+  height: 16%;
+  background: rgba(0,0,0,0.28);
+  border-radius: 999px;
+  filter: blur(1px);
+}
+
+.quarto-piece.fill-hollow::after {
+  content: "";
+  position: absolute;
+  width: 38%;
+  aspect-ratio: 1;
+  background: #0d1117;
+  border: 1px solid rgba(255,255,255,0.22);
+  border-radius: inherit;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.52);
+}
+
+@keyframes quarto-piece-pop {
+  0% { transform: scale(0.74); opacity: 0; }
+  72% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@media (max-width: 760px) {
+  .quarto-game {
+    align-items: flex-start;
+  }
+
+  .quarto-shell {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+    gap: 12px;
+    max-width: 600px;
+  }
+
+  .quarto-board {
+    width: min(100%, 56vh);
+    justify-self: center;
+  }
+
+  .quarto-panel {
+    width: min(100%, 560px);
+    justify-self: center;
+  }
+
+  .quarto-hand-piece {
+    height: 66px;
+  }
+
+  .quarto-reserve {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: 6px;
+  }
+}
+
+@media (max-width: 420px) {
+  .quarto-game {
+    padding: 12px;
+  }
+
+  .quarto-board {
+    width: min(100%, 340px);
+    gap: 6px;
+    padding: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quarto-piece,
+  .quarto-cell,
+  button.quarto-piece-slot {
+    animation: none;
+    transition: none;
+  }
+}
