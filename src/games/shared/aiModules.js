@@ -15,6 +15,7 @@ export const AI_MODULES = {
   othello: () => import('../othello/ai.js'),
   pentago: () => import('../pentago/ai.js'),
   quarto: () => import('../quarto/ai.js'),
+  quoridor: () => import('../quoridor/ai.js'),
   'tic-tac-toe': () => import('../tic-tac-toe/ai.js'),
   'ultimate-tic-tac-toe': () => import('../ultimate-tic-tac-toe/ai.js'),
 }

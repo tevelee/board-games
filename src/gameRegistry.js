@@ -336,7 +336,7 @@ export const games = [
     id: 'quoridor',
     title: 'Quoridor',
     category: 'Abstract Strategy',
-    status: 'idea',
+    status: 'playable',
     modes: ['vs-ai', 'local-2p'],
     tags: ['abstract', 'grid', 'turn-based'],
     complexity: 'Medium',
