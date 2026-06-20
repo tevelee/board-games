@@ -224,16 +224,23 @@ const QuoridorGame = forwardRef(function QuoridorGame({ mode, difficulty, onStat
           const w = hWallW()
           const h = hWallH()
           return (
-            <rect
-              key={`hw-${row}-${col}`}
-              x={x} y={y} width={w} height={h}
-              fill={placed ? '#e3b341' : hover ? `${curColor}cc` : showSlot ? `${curColor}30` : 'transparent'}
-              rx={2}
-              style={{ cursor: showSlot ? 'pointer' : 'default', pointerEvents: showSlot || placed ? 'all' : 'none' }}
-              onMouseEnter={() => showSlot && handleWallHover(row, col, 'h')}
-              onMouseLeave={() => setHoverWall(null)}
-              onClick={e => { e.stopPropagation(); if (showSlot) handleWallClick(row, col, 'h') }}
-            />
+            <g key={`hw-${row}-${col}`}>
+              <rect
+                x={x} y={y} width={w} height={h}
+                fill={placed ? '#e3b341' : hover ? `${curColor}cc` : showSlot ? `${curColor}30` : 'transparent'}
+                rx={2}
+                style={{ pointerEvents: 'none' }}
+              />
+              {/* Expanded hit area (taller) for easier touch targeting */}
+              <rect
+                x={x} y={y - 8} width={w} height={h + 16}
+                fill="transparent"
+                style={{ cursor: showSlot ? 'pointer' : 'default', pointerEvents: showSlot || placed ? 'all' : 'none' }}
+                onMouseEnter={() => showSlot && handleWallHover(row, col, 'h')}
+                onMouseLeave={() => setHoverWall(null)}
+                onClick={e => { e.stopPropagation(); if (showSlot) handleWallClick(row, col, 'h') }}
+              />
+            </g>
           )
         })
       )}
@@ -250,16 +257,23 @@ const QuoridorGame = forwardRef(function QuoridorGame({ mode, difficulty, onStat
           const w = vWallW()
           const h = vWallH()
           return (
-            <rect
-              key={`vw-${row}-${col}`}
-              x={x} y={y} width={w} height={h}
-              fill={placed ? '#e3b341' : hover ? `${curColor}cc` : showSlot ? `${curColor}30` : 'transparent'}
-              rx={2}
-              style={{ cursor: showSlot ? 'pointer' : 'default', pointerEvents: showSlot || placed ? 'all' : 'none' }}
-              onMouseEnter={() => showSlot && handleWallHover(row, col, 'v')}
-              onMouseLeave={() => setHoverWall(null)}
-              onClick={e => { e.stopPropagation(); if (showSlot) handleWallClick(row, col, 'v') }}
-            />
+            <g key={`vw-${row}-${col}`}>
+              <rect
+                x={x} y={y} width={w} height={h}
+                fill={placed ? '#e3b341' : hover ? `${curColor}cc` : showSlot ? `${curColor}30` : 'transparent'}
+                rx={2}
+                style={{ pointerEvents: 'none' }}
+              />
+              {/* Expanded hit area (wider) for easier touch targeting */}
+              <rect
+                x={x - 8} y={y} width={w + 16} height={h}
+                fill="transparent"
+                style={{ cursor: showSlot ? 'pointer' : 'default', pointerEvents: showSlot || placed ? 'all' : 'none' }}
+                onMouseEnter={() => showSlot && handleWallHover(row, col, 'v')}
+                onMouseLeave={() => setHoverWall(null)}
+                onClick={e => { e.stopPropagation(); if (showSlot) handleWallClick(row, col, 'v') }}
+              />
+            </g>
           )
         })
       )}

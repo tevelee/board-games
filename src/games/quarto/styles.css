@@ -197,6 +197,19 @@
   font-weight: 850;
 }
 
+.quarto-hand-piece .quarto-piece {
+  width: auto;
+  height: 60%;
+}
+
+.quarto-hand-piece .quarto-piece.height-tall {
+  height: 75%;
+}
+
+.quarto-hand-piece .quarto-piece.height-short {
+  height: 55%;
+}
+
 .quarto-reserve-head {
   display: flex;
   align-items: center;
