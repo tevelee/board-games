@@ -7,6 +7,7 @@ const AI_MODULES = {
   gomoku: () => import('../gomoku/ai.js'),
   hex: () => import('../hex/ai.js'),
   hive: () => import('../hive/ai.js'),
+  'international-checkers': () => import('../international-checkers/ai.js'),
   morris: () => import('../morris/ai.js'),
   othello: () => import('../othello/ai.js'),
   'tic-tac-toe': () => import('../tic-tac-toe/ai.js'),

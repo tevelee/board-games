@@ -29,6 +29,7 @@ Each game should eventually have:
 | 4 in a Row | Abstract strategy | vs AI, Local 2P | Connect Four-style vertical grid |
 | Ataxx | Abstract strategy | vs AI, Local 2P | Clone, jump, convert adjacent pieces, and selectable obstacle boards |
 | Checkers | Abstract strategy | vs AI, Local 2P | American checkers with forced captures |
+| International Checkers | Abstract strategy | vs AI, Local 2P | 10x10 draughts with flying kings and longest-capture rule |
 | Dots and Boxes | Grid games | vs AI, Local 2P | Selectable 3x3 through 6x6 box grids |
 | Tic Tac Toe | Grid games | vs AI, Local 2P | Classic 3x3 win-three game |
 | Ultimate Tic-Tac-Toe | Grid games | vs AI, Local 2P | Nine linked boards with target-board routing |
@@ -47,7 +48,6 @@ Each game should eventually have:
 | Crosswords | Word games | Solo | Needs puzzle source or generator |
 | Chess | Abstract strategy | vs AI, Local 2P | Use proven move-generation logic |
 | Battleship | Hidden information | vs AI, Local 2P | Setup phase plus guessing phase |
-| Draughts / International Checkers | Abstract strategy | vs AI, Local 2P | 10x10, flying kings |
 | Hex | Abstract strategy | vs AI, Local 2P | Connection game, clean board UI |
 | Mancala | Abstract strategy | vs AI, Local 2P | Multiple rule variants possible |
 | Go | Abstract strategy | vs AI, Local 2P | Start with 9x9 before 19x19 |

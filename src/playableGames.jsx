@@ -6,6 +6,7 @@ import AtaxxGame from './games/ataxx/Game.jsx'
 import HexGame from './games/hex/Game.jsx'
 import { BOARD_LAYOUTS as ATAXX_BOARD_LAYOUTS } from './games/ataxx/logic.js'
 import CheckersGame from './games/checkers/Game.jsx'
+import InternationalCheckersGame from './games/international-checkers/Game.jsx'
 import DotsBoxesGame from './games/dots-boxes/Game.jsx'
 import TicTacToeGame from './games/tic-tac-toe/Game.jsx'
 import UltimateTicTacToeGame from './games/ultimate-tic-tac-toe/Game.jsx'
@@ -127,6 +128,21 @@ export const playableGames = [
         'Jump over an adjacent enemy piece to capture it.',
         'Captures are mandatory, and extra jumps with the same piece continue.',
         'Reach the far row to become a king, which moves diagonally both ways.',
+      ],
+    },
+  },
+  {
+    ...gamesById['international-checkers'],
+    Component: InternationalCheckersGame,
+    hint: 'Longest captures are forced · Kings fly',
+    rules: {
+      objective: 'Capture all opposing pieces or leave the opponent without a legal move.',
+      bullets: [
+        'The game uses a 10x10 board with 20 men per player.',
+        'Men move one square diagonally forward, but capture forward or backward.',
+        'Captures are mandatory, and you must choose a sequence that captures the most pieces.',
+        'Kings move and capture across any distance on open diagonals.',
+        'A man becomes a king only if its completed move ends on the far row.',
       ],
     },
   },

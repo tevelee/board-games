@@ -237,7 +237,7 @@ export const games = [
     id: 'international-checkers',
     title: 'International Checkers',
     category: 'Abstract Strategy',
-    status: 'planned',
+    status: 'playable',
     modes: ['vs-ai', 'local-2p'],
     tags: ['abstract', 'grid', 'turn-based', 'deep'],
     complexity: 'Deep',
