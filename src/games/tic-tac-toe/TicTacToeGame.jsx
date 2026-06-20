@@ -3,6 +3,7 @@ import { useGameSync } from '../../hooks/useGameSync.js'
 import { playerColor } from '../shared/colors.js'
 import { PLAYER_1 as P1, PLAYER_2 as P2 } from '../shared/runtime.js'
 import { runAiTask } from '../shared/aiTasks.js'
+import { useAiTurn, aiDelay } from '../shared/useAiTurn.js'
 import { applyMove, getLegalMoves, makeState } from './logic.js'
 
 const THINK_DELAY = {
@@ -48,29 +49,18 @@ export default function createTicTacToeGame({
       rootRef.current?.focus()
     }, [])
 
-    useEffect(() => {
-      if (!gs.busy) return undefined
-
-      let task = null
-      const timer = setTimeout(() => {
-        task = runAiTask('tic-tac-toe', aiExportName, [gs, diffRef.current])
-        task.promise.then(index => {
-          setGs(state => {
-            if (!state.busy || index == null) return { ...state, busy: false }
-            const next = applyMoveForMode(state, index)
-            return next === state ? { ...state, busy: false } : next
-          })
-        }).catch(error => {
-          console.error(error)
-          setGs(state => state.busy ? { ...state, busy: false } : state)
-        })
-      }, THINK_DELAY[diffRef.current] ?? THINK_DELAY.medium)
-
-      return () => {
-        clearTimeout(timer)
-        task?.cancel()
-      }
-    }, [gs, aiExportName, diffRef])
+    useAiTurn({
+      active: gs.busy,
+      delay: () => aiDelay(diffRef.current, THINK_DELAY),
+      startTask: () => runAiTask('tic-tac-toe', aiExportName, [gs, diffRef.current]),
+      onResult: (state, index) => {
+        if (!state.busy || index == null) return { ...state, busy: false }
+        const next = applyMoveForMode(state, index)
+        return next === state ? { ...state, busy: false } : next
+      },
+      setState: setGs,
+      deps: [gs, aiExportName, diffRef],
+    })
 
     const legalMoves = useMemo(() => new Set(getLegalMoves(gs)), [gs])
     const winSet = useMemo(() => new Set(gs.winLine ?? []), [gs.winLine])

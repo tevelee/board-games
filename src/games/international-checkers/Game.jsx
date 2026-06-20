@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, forwardRef } from 'react'
+import { useRef, useState, forwardRef } from 'react'
 import { useGameSync } from '../../hooks/useGameSync.js'
 import { P1_COLOR, P2_COLOR, playerColor } from '../shared/colors.js'
 import { incrementPlayerScore } from '../shared/runtime.js'
 import { runAiTask } from '../shared/aiTasks.js'
+import { useAiTurn, aiDelay } from '../shared/useAiTurn.js'
 import {
   SIZE,
   P1,
@@ -113,31 +114,22 @@ const InternationalCheckersGame = forwardRef(function InternationalCheckersGame(
     makeInitial: makeInitialState,
   })
 
-  useEffect(() => {
-    if (!gs.busy) return
-    const delay = diffRef.current === 'expert' ? 680 : diffRef.current === 'hard' ? 540 : diffRef.current === 'medium' ? 420 : 300
-    let task = null
-    const timer = setTimeout(() => {
-      task = runAiTask('international-checkers', 'computeInternationalCheckersMove', [gs.board, gs.current, diffRef.current])
-      task.promise.then(move => {
-        setGs(s => {
-          if (!s.busy) return s
-          if (!move) {
-            const winner = getWinner(s.board)
-            return { ...s, winner, scores: incrementPlayerScore(s.scores, winner), busy: false, selected: -1 }
-          }
-          return finishMove(s, move, modeRef.current === 'pvp')
-        })
-      }).catch(error => {
-        console.error(error)
-        setGs(s => s.busy ? { ...s, busy: false, selected: -1 } : s)
-      })
-    }, delay)
-    return () => {
-      clearTimeout(timer)
-      task?.cancel()
-    }
-  }, [gs.busy, gs.board, gs.current])
+  useAiTurn({
+    active: gs.busy,
+    delay: () => aiDelay(diffRef.current, { easy: 300, medium: 420, hard: 540, expert: 680 }),
+    startTask: () => runAiTask('international-checkers', 'computeInternationalCheckersMove', [gs.board, gs.current, diffRef.current]),
+    onResult: (s, move) => {
+      if (!s.busy) return s
+      if (!move) {
+        const winner = getWinner(s.board)
+        return { ...s, winner, scores: incrementPlayerScore(s.scores, winner), busy: false, selected: -1 }
+      }
+      return finishMove(s, move, modeRef.current === 'pvp')
+    },
+    onError: s => ({ ...s, busy: false, selected: -1 }),
+    setState: setGs,
+    deps: [gs.busy, gs.board, gs.current],
+  })
 
   function handleCellClick(cellIdx) {
     const { board, current, selected, winner, busy } = gs

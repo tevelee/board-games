@@ -118,7 +118,11 @@ array in its playable registry entry and read the selected values from
 - Do not rely on DOM state as the source of truth for game rules.
 - AI should use the same legal move helpers as human input.
 - AI work should be cancellable or guarded so reset/undo cannot apply stale
-  moves after state changes.
+  moves after state changes. Use `useAiTurn` from `src/games/shared/useAiTurn.js`
+  to schedule AI turns: it owns the think-delay timer, task cancellation, and
+  post-cleanup guarding, so a game only declares when a turn is `active`, how to
+  `startTask`, and how to fold the result back into state. Pair it with
+  `aiDelay(difficulty, delays)` for the per-difficulty thinking delay.
 - For complex established games, prefer proven engines or libraries for move
   legality over hand-rolled rules.
 - Add focused tests when rule code becomes non-trivial, especially for capture,

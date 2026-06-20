@@ -1,0 +1,29 @@
+// Single source of truth for AI module loaders, shared by the main-thread
+// fallback in aiTasks.js and the Web Worker in aiWorker.js. Paths are relative
+// to this file (src/games/shared), so both importers resolve them the same way.
+export const AI_MODULES = {
+  ataxx: () => import('../ataxx/ai.js'),
+  backgammon: () => import('../backgammon/ai.js'),
+  checkers: () => import('../checkers/ai.js'),
+  connect4: () => import('../connect4/ai.js'),
+  'dots-boxes': () => import('../dots-boxes/ai.js'),
+  gomoku: () => import('../gomoku/ai.js'),
+  hex: () => import('../hex/ai.js'),
+  hive: () => import('../hive/ai.js'),
+  'international-checkers': () => import('../international-checkers/ai.js'),
+  morris: () => import('../morris/ai.js'),
+  othello: () => import('../othello/ai.js'),
+  pentago: () => import('../pentago/ai.js'),
+  quarto: () => import('../quarto/ai.js'),
+  'tic-tac-toe': () => import('../tic-tac-toe/ai.js'),
+  'ultimate-tic-tac-toe': () => import('../ultimate-tic-tac-toe/ai.js'),
+}
+
+export async function loadAiFunction(game, exportName) {
+  const loadModule = AI_MODULES[game]
+  if (!loadModule) throw new Error(`Unknown AI game: ${game}`)
+  const module = await loadModule()
+  const fn = module[exportName]
+  if (typeof fn !== 'function') throw new Error(`Unknown AI export: ${game}.${exportName}`)
+  return fn
+}

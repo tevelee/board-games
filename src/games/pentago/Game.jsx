@@ -1,8 +1,9 @@
-import { forwardRef, useEffect, useMemo, useRef, useState } from 'react'
+import { forwardRef, useMemo, useRef, useState } from 'react'
 import { useGameSync } from '../../hooks/useGameSync.js'
 import { hexToRgbParts, playerColor } from '../shared/colors.js'
 import { DRAW, incrementPlayerScore } from '../shared/runtime.js'
 import { runAiTask } from '../shared/aiTasks.js'
+import { useAiTurn, aiDelay } from '../shared/useAiTurn.js'
 import {
   CLOCKWISE,
   COUNTERCLOCKWISE,
@@ -61,30 +62,19 @@ const PentagoGame = forwardRef(function PentagoGame({ mode, difficulty, onStateC
     makeInitial: makeInitialState,
   })
 
-  useEffect(() => {
-    if (!gs.busy) return undefined
-
-    let task = null
-    const timer = setTimeout(() => {
-      task = runAiTask('pentago', 'computePentagoMove', [gs.board, gs.current, diffRef.current])
-      task.promise.then(move => {
-        setGs(state => {
-          if (!state.busy || state.winner) return state
-          if (!move) return { ...state, winner: DRAW, busy: false }
-          const next = applyFullMove(state, move)
-          return next === state ? { ...state, busy: false } : next
-        })
-      }).catch(error => {
-        console.error(error)
-        setGs(state => state.busy ? { ...state, busy: false } : state)
-      })
-    }, THINK_DELAY[diffRef.current] ?? THINK_DELAY.medium)
-
-    return () => {
-      clearTimeout(timer)
-      task?.cancel()
-    }
-  }, [gs.busy, gs.board, gs.current, diffRef])
+  useAiTurn({
+    active: gs.busy,
+    delay: () => aiDelay(diffRef.current, THINK_DELAY),
+    startTask: () => runAiTask('pentago', 'computePentagoMove', [gs.board, gs.current, diffRef.current]),
+    onResult: (state, move) => {
+      if (!state.busy || state.winner) return state
+      if (!move) return { ...state, winner: DRAW, busy: false }
+      const next = applyFullMove(state, move)
+      return next === state ? { ...state, busy: false } : next
+    },
+    setState: setGs,
+    deps: [gs.busy, gs.board, gs.current],
+  })
 
   const { board, busy, current, lastMove, pending, phase, winner, winLines } = gs
   const pvp = mode === 'pvp'

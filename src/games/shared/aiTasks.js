@@ -1,33 +1,12 @@
-const MAIN_THREAD_MODULES = {
-  ataxx: () => import('../ataxx/ai.js'),
-  backgammon: () => import('../backgammon/ai.js'),
-  checkers: () => import('../checkers/ai.js'),
-  connect4: () => import('../connect4/ai.js'),
-  'dots-boxes': () => import('../dots-boxes/ai.js'),
-  gomoku: () => import('../gomoku/ai.js'),
-  hex: () => import('../hex/ai.js'),
-  hive: () => import('../hive/ai.js'),
-  'international-checkers': () => import('../international-checkers/ai.js'),
-  morris: () => import('../morris/ai.js'),
-  othello: () => import('../othello/ai.js'),
-  pentago: () => import('../pentago/ai.js'),
-  quarto: () => import('../quarto/ai.js'),
-  'tic-tac-toe': () => import('../tic-tac-toe/ai.js'),
-  'ultimate-tic-tac-toe': () => import('../ultimate-tic-tac-toe/ai.js'),
-}
+import { loadAiFunction } from './aiModules.js'
 
 let nextTaskId = 1
 
 export function runAiTask(game, exportName, args) {
   if (typeof Worker === 'undefined') {
     let cancelled = false
-    const promise = MAIN_THREAD_MODULES[game]()
-      .then(module => {
-        if (cancelled) return undefined
-        const fn = module[exportName]
-        if (typeof fn !== 'function') throw new Error(`Unknown AI export: ${game}.${exportName}`)
-        return fn(...args)
-      })
+    const promise = loadAiFunction(game, exportName)
+      .then(fn => (cancelled ? undefined : fn(...args)))
 
     return {
       promise,

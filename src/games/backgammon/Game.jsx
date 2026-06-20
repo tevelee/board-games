@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, forwardRef } from 'react'
 import { useGameSync } from '../../hooks/useGameSync.js'
 import { playerColor } from '../shared/colors.js'
 import { runAiTask } from '../shared/aiTasks.js'
+import { useAiTurn, aiDelay } from '../shared/useAiTurn.js'
 import {
   BAR,
   OFF,
@@ -353,29 +354,25 @@ const BackgammonGame = forwardRef(function BackgammonGame({ mode, difficulty, on
     makeInitial: makeInitialState,
   })
 
-  useEffect(() => {
-    if (!gs.busy || gs.winner) return
-    const delay = diffRef.current === 'expert' ? 700 : diffRef.current === 'hard' ? 580 : diffRef.current === 'medium' ? 460 : 330
-    let task = null
-    const timer = setTimeout(() => {
+  useAiTurn({
+    active: gs.busy && !gs.winner,
+    delay: () => aiDelay(diffRef.current, { easy: 330, medium: 460, hard: 580, expert: 700 }),
+    startTask: () => {
       const rolled = rollDice()
       const dice = expandDice(rolled)
-      task = runAiTask('backgammon', 'computeBackgammonTurn', [gs, gs.current, dice, diffRef.current])
-      task.promise.then(sequence => {
-        setGs(state => {
-          if (!state.busy || state.winner) return state
-          return applyMoveSequence(state, rolled, sequence, modeRef.current === 'pvp')
-        })
-      }).catch(error => {
-        console.error(error)
-        setGs(state => state.busy ? { ...state, busy: false } : state)
-      })
-    }, delay)
-    return () => {
-      clearTimeout(timer)
-      task?.cancel()
-    }
-  }, [gs.busy, gs.winner, gs.current, gs])
+      const task = runAiTask('backgammon', 'computeBackgammonTurn', [gs, gs.current, dice, diffRef.current])
+      return {
+        promise: task.promise.then(sequence => ({ rolled, sequence })),
+        cancel: () => task.cancel(),
+      }
+    },
+    onResult: (state, { rolled, sequence }) => {
+      if (!state.busy || state.winner) return state
+      return applyMoveSequence(state, rolled, sequence, modeRef.current === 'pvp')
+    },
+    setState: setGs,
+    deps: [gs.busy, gs.winner, gs.current, gs],
+  })
 
   function handleRoll() {
     if (gs.winner || gs.busy || gs.phase !== 'roll') return

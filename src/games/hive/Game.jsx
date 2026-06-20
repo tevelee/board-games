@@ -2,6 +2,7 @@ import { forwardRef, useEffect, useMemo, useRef, useState } from 'react'
 import { useGameSync } from '../../hooks/useGameSync.js'
 import { P1_COLOR, P2_COLOR, playerColor } from '../shared/colors.js'
 import { runAiTask } from '../shared/aiTasks.js'
+import { useAiTurn, aiDelay } from '../shared/useAiTurn.js'
 import {
   ANT,
   BEETLE,
@@ -419,42 +420,31 @@ const HiveGame = forwardRef(function HiveGame({ mode, difficulty, onStateChange 
     makeInitial: makeInitialState,
   })
 
-  useEffect(() => {
-    if (!gs.busy) return
-    const delay = diffRef.current === 'expert' ? 700 : diffRef.current === 'hard' ? 560 : diffRef.current === 'medium' ? 450 : 320
-    let task = null
-    const timer = setTimeout(() => {
-      const context = getMoveContext(gs)
-      task = runAiTask('hive', 'computeHiveMove', [gs.pieces, gs.current, diffRef.current, context])
-      task.promise.then(move => {
-        setGs(s => {
-          if (!s.busy) return s
-          if (!move) {
-            const next = opponent(s.current)
-            const bothBlocked = getAllLegalMoves(s.pieces, next).length === 0
-            return {
-              ...s,
-              current: next,
-              winner: bothBlocked ? DRAW : null,
-              passed: true,
-              busy: false,
-              selected: null,
-              pillbugLockedId: null,
-            }
-          }
-          const result = applyMove(s.pieces, move, s.current)
-          return finishTurn(s, result.pieces, s.current, move, result, modeRef.current === 'pvp')
-        })
-      }).catch(error => {
-        console.error(error)
-        setGs(s => s.busy ? { ...s, busy: false } : s)
-      })
-    }, delay)
-    return () => {
-      clearTimeout(timer)
-      task?.cancel()
-    }
-  }, [gs.busy, gs.current, gs.pieces, gs.lastMove, gs.pillbugLockedId])
+  useAiTurn({
+    active: gs.busy,
+    delay: () => aiDelay(diffRef.current, { easy: 320, medium: 450, hard: 560, expert: 700 }),
+    startTask: () => runAiTask('hive', 'computeHiveMove', [gs.pieces, gs.current, diffRef.current, getMoveContext(gs)]),
+    onResult: (s, move) => {
+      if (!s.busy) return s
+      if (!move) {
+        const next = opponent(s.current)
+        const bothBlocked = getAllLegalMoves(s.pieces, next).length === 0
+        return {
+          ...s,
+          current: next,
+          winner: bothBlocked ? DRAW : null,
+          passed: true,
+          busy: false,
+          selected: null,
+          pillbugLockedId: null,
+        }
+      }
+      const result = applyMove(s.pieces, move, s.current)
+      return finishTurn(s, result.pieces, s.current, move, result, modeRef.current === 'pvp')
+    },
+    setState: setGs,
+    deps: [gs.busy, gs.current, gs.pieces, gs.lastMove, gs.pillbugLockedId],
+  })
 
   const pvp = mode === 'pvp'
   const humanTurn = !gs.winner && !gs.busy && (pvp || gs.current === P1)

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, forwardRef } from 'react'
+import { useState, useRef, forwardRef } from 'react'
 import {
   P1, P2,
   NODE_POS, EDGES, ADJACENCY, MILLS,
@@ -8,6 +8,7 @@ import { useGameSync } from '../../hooks/useGameSync.js'
 import { P1_COLOR, P2_COLOR, playerColor as pieceColor } from '../shared/colors.js'
 import { incrementPlayerScore } from '../shared/runtime.js'
 import { runAiTask } from '../shared/aiTasks.js'
+import { useAiTurn, aiDelay } from '../shared/useAiTurn.js'
 
 function makeInitialState() {
   return {
@@ -48,27 +49,14 @@ const MorrisGame = forwardRef(function MorrisGame({ mode, difficulty, onStateCha
   })
 
   // ── AI trigger ──────────────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!gs.busy) return
-    const delay = diffRef.current === 'expert' ? 700 : diffRef.current === 'medium' ? 500 : 400
-    let task = null
-    const timer = setTimeout(() => {
-      task = runAiTask('morris', 'computeMorrisMove', [gs, diffRef.current])
-      task.promise.then(action => {
-        setGs(s => {
-          if (!s.busy) return s
-          return applyAIAction(s, action)
-        })
-      }).catch(error => {
-        console.error(error)
-        setGs(s => s.busy ? { ...s, busy: false } : s)
-      })
-    }, delay)
-    return () => {
-      clearTimeout(timer)
-      task?.cancel()
-    }
-  }, [gs.busy, gs.mustRemove, gs.cells, gs.current])
+  useAiTurn({
+    active: gs.busy,
+    delay: () => aiDelay(diffRef.current, { easy: 400, medium: 500, hard: 400, expert: 700 }),
+    startTask: () => runAiTask('morris', 'computeMorrisMove', [gs, diffRef.current]),
+    onResult: (s, action) => (s.busy ? applyAIAction(s, action) : s),
+    setState: setGs,
+    deps: [gs.busy, gs.mustRemove, gs.cells, gs.current],
+  })
 
   // ── Game logic helpers ──────────────────────────────────────────────────────
 

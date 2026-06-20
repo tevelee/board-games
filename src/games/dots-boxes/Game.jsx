@@ -3,6 +3,7 @@ import { DRAW } from '../shared/runtime.js'
 import { useGameSync } from '../../hooks/useGameSync.js'
 import { P1_COLOR, P2_COLOR, playerColor } from '../shared/colors.js'
 import { runAiTask } from '../shared/aiTasks.js'
+import { useAiTurn, aiDelay } from '../shared/useAiTurn.js'
 import {
   P1,
   P2,
@@ -59,37 +60,21 @@ const DotsBoxesGame = forwardRef(function DotsBoxesGame({ mode, difficulty, sett
     setGs(makeState(boardSize))
   }, [boardSize, gs.size])
 
-  useEffect(() => {
-    if (!gs.busy) return
-    const chainTurn = gs.completed.length > 0 && gs.current === P2
-    const delay = chainTurn
-      ? 150
-      : diffRef.current === 'expert'
-        ? 620
-        : diffRef.current === 'hard'
-          ? 500
-          : diffRef.current === 'medium'
-            ? 420
-            : 300
-    let task = null
-    const timer = setTimeout(() => {
-      task = runAiTask('dots-boxes', 'computeDotsMove', [gs, gs.current, diffRef.current])
-      task.promise.then(key => {
-        setGs(state => {
-          if (!state.busy) return state
-          if (!key) return { ...state, winner: DRAW, busy: false }
-          return finishMove(state, key, modeRef.current === 'pvp')
-        })
-      }).catch(error => {
-        console.error(error)
-        setGs(state => state.busy ? { ...state, busy: false } : state)
-      })
-    }, delay)
-    return () => {
-      clearTimeout(timer)
-      task?.cancel()
-    }
-  }, [gs.busy, gs.current, gs.size, gs.lastMove?.key, gs.completed.length, gs.edges])
+  useAiTurn({
+    active: gs.busy,
+    delay: () => {
+      const chainTurn = gs.completed.length > 0 && gs.current === P2
+      return chainTurn ? 150 : aiDelay(diffRef.current, { easy: 300, medium: 420, hard: 500, expert: 620 })
+    },
+    startTask: () => runAiTask('dots-boxes', 'computeDotsMove', [gs, gs.current, diffRef.current]),
+    onResult: (state, key) => {
+      if (!state.busy) return state
+      if (!key) return { ...state, winner: DRAW, busy: false }
+      return finishMove(state, key, modeRef.current === 'pvp')
+    },
+    setState: setGs,
+    deps: [gs.busy, gs.current, gs.size, gs.lastMove?.key, gs.completed.length, gs.edges],
+  })
 
   function handleEdgeClick(key) {
     const pvp = modeRef.current === 'pvp'

@@ -3,6 +3,7 @@ import { useGameSync } from '../../hooks/useGameSync.js'
 import { playerColor } from '../shared/colors.js'
 import { PLAYER_1 as P1, PLAYER_2 as P2 } from '../shared/runtime.js'
 import { runAiTask } from '../shared/aiTasks.js'
+import { useAiTurn, aiDelay } from '../shared/useAiTurn.js'
 import {
   DRAW,
   EMPTY,
@@ -38,29 +39,18 @@ const UltimateTicTacToeGame = forwardRef(function UltimateTicTacToeGame({ mode, 
     rootRef.current?.focus()
   }, [])
 
-  useEffect(() => {
-    if (!gs.busy) return undefined
-
-    let task = null
-    const timer = setTimeout(() => {
-      task = runAiTask('ultimate-tic-tac-toe', 'computeUltimateTicTacToeMove', [gs, diffRef.current])
-      task.promise.then(move => {
-        setGs(state => {
-          if (!state.busy || !move) return { ...state, busy: false }
-          const next = applyMoveForMode(state, move.boardIndex, move.cellIndex)
-          return next === state ? { ...state, busy: false } : next
-        })
-      }).catch(error => {
-        console.error(error)
-        setGs(state => state.busy ? { ...state, busy: false } : state)
-      })
-    }, THINK_DELAY[diffRef.current] ?? THINK_DELAY.medium)
-
-    return () => {
-      clearTimeout(timer)
-      task?.cancel()
-    }
-  }, [gs, diffRef])
+  useAiTurn({
+    active: gs.busy,
+    delay: () => aiDelay(diffRef.current, THINK_DELAY),
+    startTask: () => runAiTask('ultimate-tic-tac-toe', 'computeUltimateTicTacToeMove', [gs, diffRef.current]),
+    onResult: (state, move) => {
+      if (!state.busy || !move) return { ...state, busy: false }
+      const next = applyMoveForMode(state, move.boardIndex, move.cellIndex)
+      return next === state ? { ...state, busy: false } : next
+    },
+    setState: setGs,
+    deps: [gs, diffRef],
+  })
 
   const playableBoards = useMemo(() => new Set(getPlayableBoards(gs)), [gs])
   const legalMoves = useMemo(

@@ -1,8 +1,9 @@
-import { forwardRef, useEffect, useRef, useState } from 'react'
+import { forwardRef, useRef, useState } from 'react'
 import { useGameSync } from '../../hooks/useGameSync.js'
 import { P1_COLOR, P2_COLOR, playerColor } from '../shared/colors.js'
 import { incrementPlayerScore } from '../shared/runtime.js'
 import { runAiTask } from '../shared/aiTasks.js'
+import { useAiTurn, aiDelay } from '../shared/useAiTurn.js'
 import {
   DRAW,
   EMPTY,
@@ -115,30 +116,19 @@ const HexGame = forwardRef(function HexGame({ mode, difficulty, onStateChange },
     onExtraReset: () => setHovered(-1),
   })
 
-  useEffect(() => {
-    if (!gs.busy) return
-    const delay = diffRef.current === 'expert' ? 560 : diffRef.current === 'hard' ? 460 : diffRef.current === 'medium' ? 360 : 260
-    let task = null
-    const timer = setTimeout(() => {
-      task = runAiTask('hex', 'computeHexMove', [gs.board, gs.current, diffRef.current])
-      task.promise.then(move => {
-        setGs(s => {
-          if (!s.busy) return s
-          if (!isValidMove(s.board, move)) return { ...s, busy: false }
-          const board = applyMove(s.board, move, s.current)
-          return finishMove(s, board, move, modeRef.current === 'pvp')
-        })
-      }).catch(error => {
-        console.error(error)
-        setGs(s => s.busy ? { ...s, busy: false } : s)
-      })
-    }, delay)
-
-    return () => {
-      clearTimeout(timer)
-      task?.cancel()
-    }
-  }, [gs.busy, gs.board, gs.current, gs.lastMove])
+  useAiTurn({
+    active: gs.busy,
+    delay: () => aiDelay(diffRef.current, { easy: 260, medium: 360, hard: 460, expert: 560 }),
+    startTask: () => runAiTask('hex', 'computeHexMove', [gs.board, gs.current, diffRef.current]),
+    onResult: (s, move) => {
+      if (!s.busy) return s
+      if (!isValidMove(s.board, move)) return { ...s, busy: false }
+      const board = applyMove(s.board, move, s.current)
+      return finishMove(s, board, move, modeRef.current === 'pvp')
+    },
+    setState: setGs,
+    deps: [gs.busy, gs.board, gs.current, gs.lastMove],
+  })
 
   function handleCellClick(cellIdx) {
     const { board, current, winner, busy } = gs

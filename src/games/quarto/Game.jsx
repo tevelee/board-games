@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useMemo, useRef, useState } from 'react'
 import { useGameSync } from '../../hooks/useGameSync.js'
 import { runAiTask } from '../shared/aiTasks.js'
+import { useAiTurn, aiDelay } from '../shared/useAiTurn.js'
 import { P1_COLOR, P2_COLOR } from '../shared/colors.js'
 import {
   DRAW,
@@ -77,40 +78,23 @@ const QuartoGame = forwardRef(function QuartoGame({ mode, difficulty, onStateCha
     })
   }, [mode])
 
-  useEffect(() => {
-    if (!gs.busy || gs.winner || gs.current !== P2) return
+  useAiTurn({
+    active: gs.busy && !gs.winner && gs.current === P2,
+    delay: () => aiDelay(diffRef.current, { easy: 280, medium: 420, hard: 520, expert: 620 }),
+    startTask: () => runAiTask('quarto', 'computeQuartoAction', [gs.board, gs.selectedPiece, gs.phase, gs.current, diffRef.current]),
+    onResult: (state, action) => {
+      if (!state.busy || state.winner || state.current !== P2) return state
 
-    const delay = diffRef.current === 'expert' ? 620 : diffRef.current === 'hard' ? 520 : diffRef.current === 'medium' ? 420 : 280
-    let task = null
-    let cancelled = false
+      const next = state.phase === PHASE_PLACE
+        ? placePiece(state, action?.cell)
+        : selectPiece(state, action?.piece)
 
-    const timer = setTimeout(() => {
-      task = runAiTask('quarto', 'computeQuartoAction', [gs.board, gs.selectedPiece, gs.phase, gs.current, diffRef.current])
-      task.promise.then(action => {
-        if (cancelled) return
-        setGs(state => {
-          if (!state.busy || state.winner || state.current !== P2) return state
-
-          const next = state.phase === PHASE_PLACE
-            ? placePiece(state, action?.cell)
-            : selectPiece(state, action?.piece)
-
-          if (next === state) return { ...state, busy: false }
-          return withBusyForMode(next, modeRef.current === 'pvp')
-        })
-      }).catch(error => {
-        if (cancelled) return
-        console.error(error)
-        setGs(state => state.busy ? { ...state, busy: false } : state)
-      })
-    }, delay)
-
-    return () => {
-      cancelled = true
-      clearTimeout(timer)
-      task?.cancel()
-    }
-  }, [gs.busy, gs.board, gs.current, gs.phase, gs.selectedPiece, gs.winner])
+      if (next === state) return { ...state, busy: false }
+      return withBusyForMode(next, modeRef.current === 'pvp')
+    },
+    setState: setGs,
+    deps: [gs.busy, gs.board, gs.current, gs.phase, gs.selectedPiece, gs.winner],
+  })
 
   const availablePieces = useMemo(
     () => getAvailablePieces(gs.board, gs.selectedPiece),
