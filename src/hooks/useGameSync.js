@@ -6,16 +6,21 @@ export function useGameSync({
   gs, setGs, historyRef, makeInitial,
   onExtraReset,
   preserveScores = true,
+  // Optional: provide this for remote-pvp support.
+  // Receives (moveData) and should call setGs with the applied move.
+  onRemoteMove,
 }) {
-  const modeRef     = useRef(mode)
-  const diffRef     = useRef(difficulty)
-  const aiFirstRef  = useRef(aiFirst)
-  const notifyCb    = useRef(onStateChange)
+  const modeRef        = useRef(mode)
+  const diffRef        = useRef(difficulty)
+  const aiFirstRef     = useRef(aiFirst)
+  const notifyCb       = useRef(onStateChange)
+  const onRemoteMoveRef = useRef(onRemoteMove)
 
-  useEffect(() => { modeRef.current = mode },           [mode])
-  useEffect(() => { diffRef.current = difficulty },     [difficulty])
-  useEffect(() => { aiFirstRef.current = aiFirst },     [aiFirst])
-  useEffect(() => { notifyCb.current = onStateChange }, [onStateChange])
+  useEffect(() => { modeRef.current = mode },            [mode])
+  useEffect(() => { diffRef.current = difficulty },      [difficulty])
+  useEffect(() => { aiFirstRef.current = aiFirst },      [aiFirst])
+  useEffect(() => { notifyCb.current = onStateChange },  [onStateChange])
+  useEffect(() => { onRemoteMoveRef.current = onRemoteMove }, [onRemoteMove])
 
   useEffect(() => {
     notifyCb.current(normalizeGameUiState({
@@ -43,6 +48,11 @@ export function useGameSync({
     undo() {
       const prev = historyRef.current.pop()
       if (prev) setGs(prev)
+    },
+    // Called by GameHost when a move arrives from the remote peer.
+    // Games opt in by providing onRemoteMove to useGameSync.
+    applyRemoteMove(data) {
+      onRemoteMoveRef.current?.(data)
     },
   }))
 

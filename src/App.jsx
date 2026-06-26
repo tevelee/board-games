@@ -3,8 +3,10 @@ import Header from './components/Header'
 import BottomBar from './components/BottomBar'
 import Launcher from './components/Launcher'
 import GameHost from './components/GameHost'
+import MultiplayerLobby from './components/MultiplayerLobby'
 import { DRAW, PLAYER_1, PLAYER_2, createGameUiState, deriveStatus } from './games/shared/runtime.js'
 import { playableGameIds, playableGamesById } from './playableGames.jsx'
+import { useMultiplayer } from './multiplayer/useMultiplayer.js'
 
 const CONFETTI = [
   ['6%', '#58a6ff', '-118px', '-32deg', '0ms'],
@@ -49,14 +51,36 @@ export default function App() {
   const activeMode = getGameMode(activeGame, mode)
   const aiFirst = !!(game && settingsByGame[game]?.aiFirst)
 
+  const { session, error: mpError, createRoom, joinRoom, sendMove, sendReset, leave: leaveRoom } = useMultiplayer({
+    onRemoteMove:  (data) => gameHostRef.current?.applyRemoteMove(data),
+    onRemoteReset: ()     => gameHostRef.current?.resetActive(),
+  })
+
+  // When both players are connected, start a fresh game
+  useEffect(() => {
+    if (session?.status === 'connected') {
+      setTimeout(() => gameHostRef.current?.resetActive(), 0)
+    }
+  }, [session?.status])
+
+  // Build the multiplayer context object that games consume
+  const multiplayer = (activeMode === 'remote-pvp' && session?.status === 'connected')
+    ? { localPlayer: session.localPlayer, onMove: sendMove }
+    : null
+
   const handleNewGame = useCallback(() => {
     gameHostRef.current?.resetActive()
-  }, [])
+    if (activeMode === 'remote-pvp' && session?.status === 'connected') {
+      sendReset()
+    }
+  }, [activeMode, session, sendReset])
 
   const handleModeChange = useCallback((newMode) => {
+    // Leaving online mode — tear down the session
+    if (newMode !== 'remote-pvp') leaveRoom()
     setMode(newMode)
     setTimeout(() => gameHostRef.current?.resetActive(), 0)
-  }, [])
+  }, [leaveRoom])
 
   const handleUndo = useCallback(() => {
     gameHostRef.current?.undoActive()
@@ -113,10 +137,10 @@ export default function App() {
     setRulesOpen(false)
   }, [game])
 
-  const [statusText, statusClass] = deriveStatus(uiState, activeMode)
+  const [statusText, statusClass] = deriveStatus(uiState, activeMode, session?.localPlayer ?? PLAYER_1)
   const gameOver = game && uiState.winner
   const gameOverCopy = gameOver
-    ? getGameOverCopy(uiState.winner, activeMode, activeGame?.title)
+    ? getGameOverCopy(uiState.winner, activeMode, activeGame?.title, session?.localPlayer ?? PLAYER_1)
     : null
 
   return (
@@ -144,8 +168,20 @@ export default function App() {
           difficulty={difficulty}
           settings={activeSettings}
           aiFirst={aiFirst}
+          multiplayer={multiplayer}
           onActiveStateChange={setUiState}
         />
+
+        {activeMode === 'remote-pvp' && game && session?.status !== 'connected' && (
+          <MultiplayerLobby
+            session={session}
+            error={mpError}
+            gameTitle={activeGame?.title}
+            onCreateRoom={createRoom}
+            onJoinRoom={joinRoom}
+            onLeave={() => handleModeChange('pvp')}
+          />
+        )}
 
         {gameOver && !gameOverDismissed && (
           <GameOverOverlay
@@ -220,9 +256,10 @@ function useVisualViewportHeight() {
 }
 
 function GameOverOverlay({ copy, scores, scoreLabels, mode, onNewGame, onReview, onLibrary }) {
-  const solo = mode === 'solo'
-  const pvp = mode === 'pvp'
-  const labels = scoreLabels ?? (solo ? ['Filled', 'Mistakes'] : pvp ? ['P1', 'P2'] : ['You', 'AI'])
+  const solo      = mode === 'solo'
+  const pvp       = mode === 'pvp'
+  const remotePvp = mode === 'remote-pvp'
+  const labels = scoreLabels ?? (solo ? ['Filled', 'Mistakes'] : (pvp || remotePvp) ? ['P1', 'P2'] : ['You', 'AI'])
 
   return (
     <div className="game-over-layer" role="dialog" aria-modal="true" aria-labelledby="game-over-title">
@@ -320,43 +357,36 @@ function RulesDialog({ title, rules, onClose }) {
   )
 }
 
-function getGameOverCopy(winner, mode, title = 'Game') {
-  const solo = mode === 'solo'
-  const pvp = mode === 'pvp'
+function getGameOverCopy(winner, mode, title = 'Game', localPlayer = PLAYER_1) {
+  const solo      = mode === 'solo'
+  const pvp       = mode === 'pvp'
+  const remotePvp = mode === 'remote-pvp'
 
   if (winner === DRAW) {
-    return {
-      tone: 'draw',
-      kicker: title,
-      title: 'Draw',
-      message: 'No winner this time.',
-    }
+    return { tone: 'draw', kicker: title, title: 'Draw', message: 'No winner this time.' }
   }
 
   if (winner === PLAYER_1) {
+    const iWon = !remotePvp || localPlayer === PLAYER_1
     return {
-      tone: 'win',
+      tone: iWon ? 'win' : 'lose',
       kicker: title,
-      title: solo ? 'Solved' : pvp ? 'Player 1 Wins' : 'You Win',
-      message: solo ? 'Puzzle complete.' : 'Clean finish.',
+      title: solo ? 'Solved' : pvp ? 'Player 1 Wins' : remotePvp ? (iWon ? 'You Win' : 'Opponent Wins') : 'You Win',
+      message: solo ? 'Puzzle complete.' : iWon ? 'Clean finish.' : 'Run it back from a fresh board.',
     }
   }
 
   if (winner === PLAYER_2) {
+    const iWon = remotePvp && localPlayer === PLAYER_2
     return {
-      tone: pvp ? 'win' : 'lose',
+      tone: (pvp || iWon) ? 'win' : 'lose',
       kicker: title,
-      title: pvp ? 'Player 2 Wins' : solo ? 'Game Over' : 'AI Wins',
-      message: pvp ? 'Game complete.' : 'Run it back from a fresh board.',
+      title: pvp ? 'Player 2 Wins' : solo ? 'Game Over' : remotePvp ? (iWon ? 'You Win' : 'Opponent Wins') : 'AI Wins',
+      message: (pvp || iWon) ? 'Game complete.' : 'Run it back from a fresh board.',
     }
   }
 
-  return {
-    tone: 'draw',
-    kicker: title,
-    title: 'Game Over',
-    message: 'Game complete.',
-  }
+  return { tone: 'draw', kicker: title, title: 'Game Over', message: 'Game complete.' }
 }
 
 function getGameSettings(game, overrides) {
@@ -370,6 +400,7 @@ function getGameSettings(game, overrides) {
 function getGameMode(game, preferredMode) {
   if (!game) return preferredMode
   if (game.modes.length === 1 && game.modes[0] === 'solo') return 'solo'
+  if (preferredMode === 'remote-pvp' && game.modes.includes('remote-2p')) return 'remote-pvp'
   if (preferredMode === 'pvp' && game.modes.includes('local-2p')) return 'pvp'
   if (preferredMode === 'pvai' && game.modes.includes('vs-ai')) return 'pvai'
   if (game.modes.includes('vs-ai')) return 'pvai'

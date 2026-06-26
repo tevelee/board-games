@@ -1,4 +1,4 @@
-import { useState, useRef, forwardRef } from 'react'
+import { useState, useRef, useEffect, forwardRef } from 'react'
 import { ROWS, COLS, P1, P2, makeBoard, dropPiece, getValidCols, checkWinAt, getWinLine, isBoardFull } from './logic.js'
 import { useGameSync } from '../../hooks/useGameSync.js'
 import { incrementPlayerScore } from '../shared/runtime.js'
@@ -38,15 +38,20 @@ function makeInitialState() {
   }
 }
 
-const Connect4Game = forwardRef(function Connect4Game({ mode, difficulty, aiFirst, onStateChange }, ref) {
+const Connect4Game = forwardRef(function Connect4Game({ mode, difficulty, aiFirst, multiplayer, onStateChange }, ref) {
   const [gs, setGs] = useState(makeInitialState)
   const [hoverCol, setHoverCol] = useState(-1)
 
-  const historyRef = useRef([])
+  const historyRef    = useRef([])
+  const multiplayerRef = useRef(multiplayer)
+  useEffect(() => { multiplayerRef.current = multiplayer }, [multiplayer])
+
   const { modeRef, diffRef } = useGameSync({
     ref, mode, difficulty, aiFirst, onStateChange,
     gs, setGs, historyRef, makeInitial: makeInitialState,
     onExtraReset: () => setHoverCol(-1),
+    // Apply an incoming move from the remote peer
+    onRemoteMove: ({ col }) => setGs(s => s.winner ? s : applyDrop(s, col)),
   })
 
   useAiTurn({
@@ -85,17 +90,24 @@ const Connect4Game = forwardRef(function Connect4Game({ mode, difficulty, aiFirs
 
   function handleColClick(col) {
     const { board, current, winner, busy } = gs
-    const pvp = modeRef.current === 'pvp'
+    const pvp        = modeRef.current === 'pvp'
+    const remotePvp  = modeRef.current === 'remote-pvp'
+    const localPlayer = multiplayerRef.current?.localPlayer ?? P1
     if (winner || busy) return
-    if (!pvp && current === P2) return
+    if (!pvp && !remotePvp && current === P2) return
+    if (remotePvp && current !== localPlayer) return
     if (board[0][col] !== 0) return
     historyRef.current.push(gs)
     setGs(s => applyDrop(s, col))
+    if (remotePvp) multiplayerRef.current?.onMove({ col })
   }
 
   const { board, current, winner, busy, winLine, lastMove } = gs
-  const pvp       = mode === 'pvp'
-  const validCols = new Set(!winner && !busy && (pvp || current === P1) ? getValidCols(board) : [])
+  const pvp        = mode === 'pvp'
+  const remotePvp  = mode === 'remote-pvp'
+  const localPlayer = multiplayer?.localPlayer ?? P1
+  const myTurn     = remotePvp ? current === localPlayer : (pvp || current === P1)
+  const validCols  = new Set(!winner && !busy && myTurn ? getValidCols(board) : [])
   const winSet    = winLine ? new Set(winLine.map(([r, c]) => r * COLS + c)) : null
   const curColor  = playerColor(current)
 

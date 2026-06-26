@@ -4,6 +4,7 @@ export const filterOptions = [
   { id: 'solo', label: 'Solo' },
   { id: 'vs-ai', label: 'vs AI' },
   { id: 'local-2p', label: 'Local 2P' },
+  { id: 'remote-2p', label: 'Online' },
   { id: 'abstract', label: 'Abstract' },
   { id: 'grid', label: 'Grid' },
   { id: 'puzzle', label: 'Puzzle' },
@@ -17,6 +18,7 @@ export const modeLabels = {
   solo: 'Solo',
   'vs-ai': 'vs AI',
   'local-2p': 'Local 2P',
+  'remote-2p': 'Online',
 }
 
 export const statusLabels = {
@@ -72,7 +74,7 @@ export const games = [
     title: '4 in a Row',
     category: 'Abstract Strategy',
     status: 'playable',
-    modes: ['vs-ai', 'local-2p'],
+    modes: ['vs-ai', 'local-2p', 'remote-2p'],
     tags: ['abstract', 'grid', 'turn-based', 'quick'],
     complexity: 'Light',
     duration: '3-10 min',

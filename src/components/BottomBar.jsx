@@ -186,13 +186,15 @@ function ActionMenu({ onUndo, aiFirst, onAiFirstChange, historyLen, pvai }) {
 }
 
 const MODE_OPTIONS = [
-  { value: 'pvai', label: 'vs AI' },
-  { value: 'pvp', label: 'vs Player' },
+  { value: 'pvai',       label: 'vs AI' },
+  { value: 'pvp',        label: 'vs Player' },
+  { value: 'remote-pvp', label: 'Online' },
 ]
 
 const MODE_OPTIONS_BY_GAME_MODE = {
-  'vs-ai': MODE_OPTIONS[0],
-  'local-2p': MODE_OPTIONS[1],
+  'vs-ai':     MODE_OPTIONS[0],
+  'local-2p':  MODE_OPTIONS[1],
+  'remote-2p': MODE_OPTIONS[2],
 }
 
 const DIFFICULTY_OPTIONS = [
@@ -209,13 +211,14 @@ export default function BottomBar({
   onModeChange, onDifficultyChange, onNewGame,
   onUndo, onShowRules, hasRules = false,
 }) {
-  const solo = mode === 'solo'
-  const pvp = mode === 'pvp'
-  const pvai = mode === 'pvai'
+  const solo      = mode === 'solo'
+  const pvp       = mode === 'pvp'
+  const pvai      = mode === 'pvai'
+  const remotePvp = mode === 'remote-pvp'
   const modeOptions = gameModes.map(gameMode => MODE_OPTIONS_BY_GAME_MODE[gameMode]).filter(Boolean)
-  const labels = scoreLabels ?? (solo ? ['Filled', 'Mistakes'] : pvp ? ['P1', 'P2'] : ['You', 'AI'])
+  const labels = scoreLabels ?? (solo ? ['Filled', 'Mistakes'] : (pvp || remotePvp) ? ['P1', 'P2'] : ['You', 'AI'])
   const showModeSelect = modeOptions.length > 1
-  const showDifficulty = solo || mode === 'pvai'
+  const showDifficulty = solo || pvai
 
   return (
     <div className="bottom-bar">

@@ -12,6 +12,7 @@ const GameHost = forwardRef(function GameHost({
   difficulty,
   settings,
   aiFirst,
+  multiplayer,
   onActiveStateChange,
 }, ref) {
   const gameRefs = useRef({})
@@ -47,6 +48,10 @@ const GameHost = forwardRef(function GameHost({
       if (!activeGameId) return
       gameRefs.current[activeGameId]?.undo?.()
     },
+    applyRemoteMove(data) {
+      if (!activeGameId) return
+      gameRefs.current[activeGameId]?.applyRemoteMove?.(data)
+    },
   }), [activeGameId])
 
   return (
@@ -70,6 +75,7 @@ const GameHost = forwardRef(function GameHost({
             difficulty={difficulty}
             settings={activeGameId === id ? settings : undefined}
             aiFirst={activeGameId === id ? aiFirst : false}
+            multiplayer={activeGameId === id ? multiplayer : null}
             onStateChange={state => handleGameStateChange(id, state)}
           />
         </div>
