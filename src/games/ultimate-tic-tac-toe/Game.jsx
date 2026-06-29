@@ -20,10 +20,13 @@ const THINK_DELAY = {
   expert: 680,
 }
 
-const UltimateTicTacToeGame = forwardRef(function UltimateTicTacToeGame({ mode, difficulty, aiFirst, onStateChange }, ref) {
+const UltimateTicTacToeGame = forwardRef(function UltimateTicTacToeGame({ mode, difficulty, aiFirst, multiplayer, onStateChange }, ref) {
   const [gs, setGs] = useState(makeState)
   const historyRef = useRef([])
   const rootRef = useRef(null)
+  const multiplayerRef = useRef(multiplayer)
+  useEffect(() => { multiplayerRef.current = multiplayer }, [multiplayer])
+
   const { modeRef, diffRef } = useGameSync({
     ref,
     mode,
@@ -34,6 +37,8 @@ const UltimateTicTacToeGame = forwardRef(function UltimateTicTacToeGame({ mode, 
     setGs,
     historyRef,
     makeInitial: makeState,
+    onRemoteMove: ({ boardIndex, cellIndex }) =>
+      setGs(s => s.winner ? s : applyMoveForMode(s, boardIndex, cellIndex)),
   })
 
   useEffect(() => {
@@ -53,6 +58,10 @@ const UltimateTicTacToeGame = forwardRef(function UltimateTicTacToeGame({ mode, 
     deps: [gs, diffRef],
   })
 
+  const remotePvp = mode === 'remote-pvp'
+  const localPlayer = multiplayer?.localPlayer ?? P1
+  const myTurn = remotePvp ? gs.current === localPlayer : (mode === 'pvp' || gs.current === P1)
+
   const playableBoards = useMemo(() => new Set(getPlayableBoards(gs)), [gs])
   const legalMoves = useMemo(
     () => new Set(getLegalMoves(gs).map(move => moveKey(move.boardIndex, move.cellIndex))),
@@ -63,16 +72,20 @@ const UltimateTicTacToeGame = forwardRef(function UltimateTicTacToeGame({ mode, 
   function applyMoveForMode(state, boardIndex, cellIndex) {
     const next = applyMove(state, boardIndex, cellIndex)
     if (next === state) return state
-    const needsAI = modeRef.current !== 'pvp' && !next.winner && next.current === P2
+    const needsAI = modeRef.current !== 'pvp' && modeRef.current !== 'remote-pvp' && !next.winner && next.current === P2
     return { ...next, busy: needsAI }
   }
 
   function handleMove(boardIndex, cellIndex) {
+    const remotePvp = modeRef.current === 'remote-pvp'
+    const localPlayer = multiplayerRef.current?.localPlayer ?? P1
     const key = moveKey(boardIndex, cellIndex)
     if (gs.winner || gs.busy || !legalMoves.has(key)) return
-    if (modeRef.current !== 'pvp' && gs.current === P2) return
+    if (modeRef.current !== 'pvp' && !remotePvp && gs.current === P2) return
+    if (remotePvp && gs.current !== localPlayer) return
     historyRef.current.push(gs)
     setGs(state => applyMoveForMode(state, boardIndex, cellIndex))
+    if (remotePvp) multiplayerRef.current?.onMove({ boardIndex, cellIndex })
   }
 
   return (
@@ -102,7 +115,7 @@ const UltimateTicTacToeGame = forwardRef(function UltimateTicTacToeGame({ mode, 
                 <div className="utt-cells">
                   {board.map((cell, cellIndex) => {
                     const key = moveKey(boardIndex, cellIndex)
-                    const legal = legalMoves.has(key) && !gs.busy && !gs.winner && (mode === 'pvp' || gs.current === P1)
+                    const legal = legalMoves.has(key) && !gs.busy && !gs.winner && myTurn
                     const localWinSet = new Set(gs.boardWinLines[boardIndex] ?? [])
                     const cellClasses = [
                       'utt-cell',

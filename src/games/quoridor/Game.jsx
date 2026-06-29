@@ -1,4 +1,4 @@
-import { forwardRef, useRef, useState, useCallback } from 'react'
+import { forwardRef, useRef, useState, useCallback, useEffect } from 'react'
 import { useGameSync } from '../../hooks/useGameSync.js'
 import { useAiTurn, aiDelay } from '../shared/useAiTurn.js'
 import { runAiTask } from '../shared/aiTasks.js'
@@ -43,13 +43,15 @@ function makeInitialState() {
   return makeState()
 }
 
-const QuoridorGame = forwardRef(function QuoridorGame({ mode, difficulty, aiFirst, onStateChange }, ref) {
+const QuoridorGame = forwardRef(function QuoridorGame({ mode, difficulty, aiFirst, multiplayer, onStateChange }, ref) {
   const [gs, setGs] = useState(makeInitialState)
   const historyRef = useRef([])
   const [wallMode, setWallMode] = useState(false)
   const [wallOrient, setWallOrient] = useState('h')
   const [hoverWall, setHoverWall] = useState(null) // { row, col, orient }
   const [selectedPawn, setSelectedPawn] = useState(false)
+  const multiplayerRef = useRef(multiplayer)
+  useEffect(() => { multiplayerRef.current = multiplayer }, [multiplayer])
 
   const { modeRef, diffRef } = useGameSync({
     ref,
@@ -66,6 +68,7 @@ const QuoridorGame = forwardRef(function QuoridorGame({ mode, difficulty, aiFirs
       setHoverWall(null)
       setSelectedPawn(false)
     },
+    onRemoteMove: (move) => setGs(s => s.winner ? s : applyMove(s, move)),
   })
 
   useAiTurn({
@@ -82,9 +85,12 @@ const QuoridorGame = forwardRef(function QuoridorGame({ mode, difficulty, aiFirs
     deps: [gs.busy],
   })
 
-  const pvp = mode === 'pvp'
+  const pvp = mode === 'pvp' || mode === 'remote-pvp'
+  const remotePvp = mode === 'remote-pvp'
+  const localPlayer = multiplayer?.localPlayer ?? PLAYER_1
   const { current, winner, busy, p1, p2, walls1, walls2, hWalls, vWalls, lastMove } = gs
-  const isHumanTurn = !winner && !busy && (pvp || current === PLAYER_1)
+  const myTurn = remotePvp ? current === localPlayer : (pvp || current === PLAYER_1)
+  const isHumanTurn = !winner && !busy && myTurn
   const currentWalls = current === PLAYER_1 ? walls1 : walls2
 
   const pawnMoves = isHumanTurn ? getPawnMoves(gs) : []
@@ -99,13 +105,15 @@ const QuoridorGame = forwardRef(function QuoridorGame({ mode, difficulty, aiFirs
     }
     const key = `${row},${col}`
     if (pawnTargets.has(key)) {
+      const move = { type: 'move', row, col }
       historyRef.current.push(gs)
       setSelectedPawn(false)
       setGs(s => {
-        const next = applyMove(s, { type: 'move', row, col })
+        const next = applyMove(s, move)
         const needsAI = !pvp && next.current === PLAYER_2 && !next.winner
         return needsAI ? { ...next, busy: true } : next
       })
+      if (remotePvp) multiplayerRef.current?.onMove(move)
     } else {
       // Clicking own pawn or empty — toggle pawn selection
       const pos = current === PLAYER_1 ? p1 : p2
@@ -120,14 +128,16 @@ const QuoridorGame = forwardRef(function QuoridorGame({ mode, difficulty, aiFirs
   function handleWallClick(row, col, orient) {
     if (!isHumanTurn || currentWalls <= 0) return
     if (!wallKeepsPaths(row, col, orient)) return
+    const move = { type: 'wall', orient, row, col }
     historyRef.current.push(gs)
     setHoverWall(null)
     setWallMode(false)
     setGs(s => {
-      const next = applyMove(s, { type: 'wall', orient, row, col })
+      const next = applyMove(s, move)
       const needsAI = !pvp && next.current === PLAYER_2 && !next.winner
       return needsAI ? { ...next, busy: true } : next
     })
+    if (remotePvp) multiplayerRef.current?.onMove(move)
   }
 
   function handleWallHover(row, col, orient) {

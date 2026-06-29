@@ -51,10 +51,12 @@ function Piece({ piece, className = '' }) {
   )
 }
 
-const QuartoGame = forwardRef(function QuartoGame({ mode, difficulty, aiFirst, onStateChange }, ref) {
+const QuartoGame = forwardRef(function QuartoGame({ mode, difficulty, aiFirst, multiplayer, onStateChange }, ref) {
   const [gs, setGs] = useState(makeInitialState)
   const historyRef = useRef([])
   const rootRef = useRef(null)
+  const multiplayerRef = useRef(multiplayer)
+  useEffect(() => { multiplayerRef.current = multiplayer }, [multiplayer])
 
   const { modeRef, diffRef } = useGameSync({
     ref,
@@ -66,6 +68,11 @@ const QuartoGame = forwardRef(function QuartoGame({ mode, difficulty, aiFirst, o
     setGs,
     historyRef,
     makeInitial: makeInitialState,
+    onRemoteMove: ({ kind, cell, piece }) => setGs(s => {
+      if (s.winner) return s
+      const next = kind === 'place' ? placePiece(s, cell) : selectPiece(s, piece)
+      return next === s ? s : { ...next, busy: false }
+    }),
   })
 
   useEffect(() => {
@@ -74,7 +81,7 @@ const QuartoGame = forwardRef(function QuartoGame({ mode, difficulty, aiFirst, o
 
   useEffect(() => {
     setGs(state => {
-      const next = withBusyForMode(state, mode === 'pvp')
+      const next = withBusyForMode(state, mode === 'pvp' || mode === 'remote-pvp')
       return next.busy === state.busy ? state : next
     })
   }, [mode])
@@ -91,7 +98,7 @@ const QuartoGame = forwardRef(function QuartoGame({ mode, difficulty, aiFirst, o
         : selectPiece(state, action?.piece)
 
       if (next === state) return { ...state, busy: false }
-      return withBusyForMode(next, modeRef.current === 'pvp')
+      return withBusyForMode(next, modeRef.current === 'pvp' || modeRef.current === 'remote-pvp')
     },
     setState: setGs,
     deps: [gs.busy, gs.board, gs.current, gs.phase, gs.selectedPiece, gs.winner],
@@ -103,26 +110,31 @@ const QuartoGame = forwardRef(function QuartoGame({ mode, difficulty, aiFirst, o
   )
   const availableSet = useMemo(() => new Set(availablePieces), [availablePieces])
   const winCells = useMemo(() => new Set(gs.winLine ?? []), [gs.winLine])
-  const pvp = mode === 'pvp'
-  const humanTurn = !gs.winner && !gs.busy && (pvp || gs.current === P1)
+  const pvp = mode === 'pvp' || mode === 'remote-pvp'
+  const remotePvp = mode === 'remote-pvp'
+  const localPlayer = multiplayer?.localPlayer ?? P1
+  const myTurn = remotePvp ? gs.current === localPlayer : (pvp || gs.current === P1)
+  const humanTurn = !gs.winner && !gs.busy && myTurn
   const canPlace = humanTurn && gs.phase === PHASE_PLACE
   const canSelect = humanTurn && gs.phase === PHASE_SELECT
   const placedCount = getPlacedCount(gs.board)
 
-  function commit(next) {
-    if (next === gs) return
-    historyRef.current.push(gs)
-    setGs(withBusyForMode(next, modeRef.current === 'pvp'))
-  }
-
   function handleCell(cell) {
     if (!canPlace || Number.isInteger(gs.board[cell])) return
-    commit(placePiece(gs, cell))
+    const next = placePiece(gs, cell)
+    if (next === gs) return
+    historyRef.current.push(gs)
+    setGs(withBusyForMode(next, modeRef.current === 'pvp' || modeRef.current === 'remote-pvp'))
+    if (modeRef.current === 'remote-pvp') multiplayerRef.current?.onMove({ kind: 'place', cell })
   }
 
   function handlePiece(piece) {
     if (!canSelect || !availableSet.has(piece)) return
-    commit(selectPiece(gs, piece))
+    const next = selectPiece(gs, piece)
+    if (next === gs) return
+    historyRef.current.push(gs)
+    setGs(withBusyForMode(next, modeRef.current === 'pvp' || modeRef.current === 'remote-pvp'))
+    if (modeRef.current === 'remote-pvp') multiplayerRef.current?.onMove({ kind: 'select', piece })
   }
 
   const phaseTitle = gs.winner

@@ -1,4 +1,4 @@
-import { forwardRef, useMemo, useRef, useState } from 'react'
+import { forwardRef, useMemo, useRef, useState, useEffect } from 'react'
 import { useGameSync } from '../../hooks/useGameSync.js'
 import { hexToRgbParts, playerColor } from '../shared/colors.js'
 import { DRAW, incrementPlayerScore } from '../shared/runtime.js'
@@ -48,9 +48,12 @@ function makeInitialState() {
   }
 }
 
-const PentagoGame = forwardRef(function PentagoGame({ mode, difficulty, aiFirst, onStateChange }, ref) {
+const PentagoGame = forwardRef(function PentagoGame({ mode, difficulty, aiFirst, multiplayer, onStateChange }, ref) {
   const [gs, setGs] = useState(makeInitialState)
   const historyRef = useRef([])
+  const multiplayerRef = useRef(multiplayer)
+  useEffect(() => { multiplayerRef.current = multiplayer }, [multiplayer])
+
   const { modeRef, diffRef } = useGameSync({
     ref,
     mode,
@@ -61,6 +64,8 @@ const PentagoGame = forwardRef(function PentagoGame({ mode, difficulty, aiFirst,
     setGs,
     historyRef,
     makeInitial: makeInitialState,
+    onRemoteMove: ({ cellIndex, quadrant, direction }) =>
+      setGs(s => s.winner ? s : applyFullMove(s, { cellIndex, quadrant, direction })),
   })
 
   useAiTurn({
@@ -78,8 +83,11 @@ const PentagoGame = forwardRef(function PentagoGame({ mode, difficulty, aiFirst,
   })
 
   const { board, busy, current, lastMove, pending, phase, winner, winLines } = gs
-  const pvp = mode === 'pvp'
-  const canAct = !busy && !winner && (pvp || current === P1)
+  const pvp = mode === 'pvp' || mode === 'remote-pvp'
+  const remotePvp = mode === 'remote-pvp'
+  const localPlayer = multiplayer?.localPlayer ?? P1
+  const myTurn = remotePvp ? current === localPlayer : (pvp || current === P1)
+  const canAct = !busy && !winner && myTurn
   const canPlace = canAct && phase === PHASE_PLACE
   const canRotate = canAct && phase === PHASE_ROTATE
   const currentColor = playerColor(current)
@@ -123,7 +131,7 @@ const PentagoGame = forwardRef(function PentagoGame({ mode, difficulty, aiFirst,
     const boardAfterRotation = rotateQuadrant(state.board, quadrant, direction)
     const rotationResult = evaluateAfterRotation(boardAfterRotation)
     const nextCurrent = rotationResult.winner ? state.current : otherPlayer(state.current)
-    const needsAI = modeRef.current !== 'pvp' && !rotationResult.winner && nextCurrent === P2
+    const needsAI = modeRef.current !== 'pvp' && modeRef.current !== 'remote-pvp' && !rotationResult.winner && nextCurrent === P2
     const placedIndex = rotateCellIndex(state.pending.index, quadrant, direction)
 
     return {
@@ -170,16 +178,15 @@ const PentagoGame = forwardRef(function PentagoGame({ mode, difficulty, aiFirst,
 
   function handleCellClick(cellIndex) {
     if (!canPlace || board[cellIndex] !== EMPTY) return
-    if (modeRef.current !== 'pvp' && current === P2) return
-
     historyRef.current.push(gs)
     setGs(state => applyPlacementState(state, cellIndex))
   }
 
   function handleRotate(quadrant, direction) {
     if (!canRotate) return
-    if (modeRef.current !== 'pvp' && current === P2) return
+    const pendingIndex = gs.pending?.index
     setGs(state => completeRotation(state, quadrant, direction))
+    if (remotePvp) multiplayerRef.current?.onMove({ cellIndex: pendingIndex, quadrant, direction })
   }
 
   return (

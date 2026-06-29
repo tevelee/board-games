@@ -1,4 +1,4 @@
-import { useRef, useState, forwardRef } from 'react'
+import { useRef, useState, forwardRef, useEffect } from 'react'
 import { useGameSync } from '../../hooks/useGameSync.js'
 import { P1_COLOR, P2_COLOR, playerColor } from '../shared/colors.js'
 import { incrementPlayerScore } from '../shared/runtime.js'
@@ -99,9 +99,11 @@ function finishMove(s, move, pvp) {
   }
 }
 
-const InternationalCheckersGame = forwardRef(function InternationalCheckersGame({ mode, difficulty, aiFirst, onStateChange }, ref) {
+const InternationalCheckersGame = forwardRef(function InternationalCheckersGame({ mode, difficulty, aiFirst, multiplayer, onStateChange }, ref) {
   const [gs, setGs] = useState(makeInitialState)
   const historyRef = useRef([])
+  const multiplayerRef = useRef(multiplayer)
+  useEffect(() => { multiplayerRef.current = multiplayer }, [multiplayer])
 
   const { modeRef, diffRef } = useGameSync({
     ref,
@@ -113,6 +115,7 @@ const InternationalCheckersGame = forwardRef(function InternationalCheckersGame(
     setGs,
     historyRef,
     makeInitial: makeInitialState,
+    onRemoteMove: (data) => setGs(s => s.winner ? s : finishMove(s, data, true)),
   })
 
   useAiTurn({
@@ -135,8 +138,11 @@ const InternationalCheckersGame = forwardRef(function InternationalCheckersGame(
   function handleCellClick(cellIdx) {
     const { board, current, selected, winner, busy } = gs
     const pvp = modeRef.current === 'pvp'
+    const remotePvp = modeRef.current === 'remote-pvp'
+    const localPlayer = multiplayerRef.current?.localPlayer ?? P1
     if (winner || busy) return
-    if (!pvp && current === P2) return
+    if (!pvp && !remotePvp && current === P2) return
+    if (remotePvp && current !== localPlayer) return
 
     const legalMoves = getValidMoves(board, current)
     const sourceMoves = legalMoves.filter(move => move.from === cellIdx)
@@ -154,12 +160,16 @@ const InternationalCheckersGame = forwardRef(function InternationalCheckersGame(
     }
 
     historyRef.current.push(gs)
-    setGs(s => finishMove(s, move, modeRef.current === 'pvp'))
+    setGs(s => finishMove(s, move, pvp || remotePvp))
+    if (remotePvp) multiplayerRef.current?.onMove({ from: move.from, to: move.to, path: move.path, kind: move.kind })
   }
 
   const { board, current, selected, winner, busy, lastMove } = gs
-  const pvp = mode === 'pvp'
-  const humanTurn = !winner && !busy && (pvp || current === P1)
+  const pvp = mode === 'pvp' || mode === 'remote-pvp'
+  const remotePvp = mode === 'remote-pvp'
+  const localPlayer = multiplayer?.localPlayer ?? P1
+  const myTurn = remotePvp ? current === localPlayer : (pvp || current === P1)
+  const humanTurn = !winner && !busy && myTurn
   const legalMoves = humanTurn ? getValidMoves(board, current) : []
   const selectable = new Set(legalMoves.map(move => move.from))
   const targets = new Map()

@@ -404,10 +404,12 @@ function ReserveTile({ type, count, x, y, current, selected, disabled, required,
   )
 }
 
-const HiveGame = forwardRef(function HiveGame({ mode, difficulty, aiFirst, onStateChange }, ref) {
+const HiveGame = forwardRef(function HiveGame({ mode, difficulty, aiFirst, multiplayer, onStateChange }, ref) {
   const layout = useHiveLayout()
   const [gs, setGs] = useState(makeInitialState)
   const historyRef = useRef([])
+  const multiplayerRef = useRef(multiplayer)
+  useEffect(() => { multiplayerRef.current = multiplayer }, [multiplayer])
 
   const { modeRef, diffRef } = useGameSync({
     ref,
@@ -419,6 +421,11 @@ const HiveGame = forwardRef(function HiveGame({ mode, difficulty, aiFirst, onSta
     setGs,
     historyRef,
     makeInitial: makeInitialState,
+    onRemoteMove: (move) => setGs(s => {
+      if (s.winner) return s
+      const result = applyMove(s.pieces, move, s.current)
+      return finishTurn(s, result.pieces, s.current, move, result, true)
+    }),
   })
 
   useAiTurn({
@@ -441,14 +448,17 @@ const HiveGame = forwardRef(function HiveGame({ mode, difficulty, aiFirst, onSta
         }
       }
       const result = applyMove(s.pieces, move, s.current)
-      return finishTurn(s, result.pieces, s.current, move, result, modeRef.current === 'pvp')
+      return finishTurn(s, result.pieces, s.current, move, result, modeRef.current === 'pvp' || modeRef.current === 'remote-pvp')
     },
     setState: setGs,
     deps: [gs.busy, gs.current, gs.pieces, gs.lastMove, gs.pillbugLockedId],
   })
 
-  const pvp = mode === 'pvp'
-  const humanTurn = !gs.winner && !gs.busy && (pvp || gs.current === P1)
+  const pvp = mode === 'pvp' || mode === 'remote-pvp'
+  const remotePvp = mode === 'remote-pvp'
+  const localPlayer = multiplayer?.localPlayer ?? P1
+  const myTurn = remotePvp ? gs.current === localPlayer : (pvp || gs.current === P1)
+  const humanTurn = !gs.winner && !gs.busy && myTurn
   const moveContext = getMoveContext(gs)
   const inventory = getInventory(gs.pieces, gs.current)
   const selectedMoves = humanTurn ? getLegalMovesForSelection(gs.pieces, gs.selected, gs.current, moveContext) : []
@@ -473,8 +483,9 @@ const HiveGame = forwardRef(function HiveGame({ mode, difficulty, aiFirst, onSta
     historyRef.current.push(gs)
     setGs(s => {
       const result = applyMove(s.pieces, move, s.current)
-      return finishTurn(s, result.pieces, s.current, move, result, modeRef.current === 'pvp')
+      return finishTurn(s, result.pieces, s.current, move, result, modeRef.current === 'pvp' || modeRef.current === 'remote-pvp')
     })
+    if (modeRef.current === 'remote-pvp') multiplayerRef.current?.onMove(move)
   }
 
   function handleReserveClick(type) {

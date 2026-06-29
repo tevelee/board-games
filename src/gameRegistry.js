@@ -174,7 +174,7 @@ export const games = [
     title: 'Backgammon',
     category: 'Race / Table',
     status: 'playable',
-    modes: ['vs-ai', 'local-2p', 'remote-2p'],
+    modes: ['vs-ai', 'local-2p'],
     tags: ['turn-based', 'deep'],
     complexity: 'Medium',
     duration: '10-30 min',

@@ -5,7 +5,7 @@ import { runAiTask } from '../shared/aiTasks.js'
 
 const BASE_CELL = 44
 
-const GomokuGame = forwardRef(function GomokuGame({ mode, difficulty, aiFirst, onStateChange }, ref) {
+const GomokuGame = forwardRef(function GomokuGame({ mode, difficulty, aiFirst, multiplayer, onStateChange }, ref) {
   const canvasEl = useRef(null)
 
   // View state — all imperative, no React re-renders
@@ -36,16 +36,19 @@ const GomokuGame = forwardRef(function GomokuGame({ mode, difficulty, aiFirst, o
   const botTaskRef     = useRef(null)
   const undoRef        = useRef(null)
   const scheduleBotRef = useRef(null)
+  const placeRef       = useRef(null)
 
   // Live prop refs so event-handler closures always read current values
-  const modeRef    = useRef(mode)
-  const diffRef    = useRef(difficulty)
-  const aiFirstRef = useRef(aiFirst)
-  const notifyCb   = useRef(onStateChange)
-  useEffect(() => { modeRef.current = mode },       [mode])
-  useEffect(() => { diffRef.current = difficulty }, [difficulty])
-  useEffect(() => { aiFirstRef.current = aiFirst }, [aiFirst])
-  useEffect(() => { notifyCb.current = onStateChange }, [onStateChange])
+  const modeRef       = useRef(mode)
+  const diffRef       = useRef(difficulty)
+  const aiFirstRef    = useRef(aiFirst)
+  const multiplayerRef = useRef(multiplayer)
+  const notifyCb      = useRef(onStateChange)
+  useEffect(() => { modeRef.current = mode },             [mode])
+  useEffect(() => { diffRef.current = difficulty },       [difficulty])
+  useEffect(() => { aiFirstRef.current = aiFirst },       [aiFirst])
+  useEffect(() => { multiplayerRef.current = multiplayer }, [multiplayer])
+  useEffect(() => { notifyCb.current = onStateChange },   [onStateChange])
 
   useImperativeHandle(ref, () => ({
     reset() {
@@ -64,7 +67,8 @@ const GomokuGame = forwardRef(function GomokuGame({ mode, difficulty, aiFirst, o
       pieceAnims.current.clear()
       panAnim.current   = null
       if (rafId.current) { cancelAnimationFrame(rafId.current); rafId.current = null }
-      if (aiFirstRef.current && modeRef.current !== 'pvp') {
+      const remotePvp = modeRef.current === 'remote-pvp'
+      if (aiFirstRef.current && modeRef.current !== 'pvp' && !remotePvp) {
         current.current = BOT
         scheduleBotRef.current?.()
       } else {
@@ -74,6 +78,7 @@ const GomokuGame = forwardRef(function GomokuGame({ mode, difficulty, aiFirst, o
       }
     },
     undo() { undoRef.current?.() },
+    applyRemoteMove(data) { placeRef.current?.(data.x, data.y) },
   }))
 
   useEffect(() => {
@@ -224,10 +229,33 @@ const GomokuGame = forwardRef(function GomokuGame({ mode, difficulty, aiFirst, o
       }, delay)
     }
 
+    function placeRemote(x, y) {
+      if (winner.current) return
+      const key = `${x},${y}`
+      if (board.current.has(key)) return
+      historyRef.current.push({
+        board:    new Map(board.current),
+        current:  current.current,
+        winner:   winner.current,
+        winLine:  winLine.current,
+        lastMove: lastMove.current,
+      })
+      if (place(x, y)) {
+        pieceAnims.current.set(key, { start: performance.now() })
+        ensureVisible(x, y)
+        startRaf()
+        pushState()
+      }
+    }
+    placeRef.current = placeRemote
+
     function handlePlaceAt(px, py) {
       const pvp = modeRef.current === 'pvp'
+      const remotePvp = modeRef.current === 'remote-pvp'
+      const localPlayer = multiplayerRef.current?.localPlayer ?? HUMAN
       if (busy.current || winner.current) return
-      if (!pvp && current.current !== HUMAN) return
+      if (!pvp && !remotePvp && current.current !== HUMAN) return
+      if (remotePvp && current.current !== localPlayer) return
       const g = p2g(px, py)
       const key = `${g.x},${g.y}`
       if (board.current.has(key)) return
@@ -242,7 +270,8 @@ const GomokuGame = forwardRef(function GomokuGame({ mode, difficulty, aiFirst, o
         pieceAnims.current.set(key, { start: performance.now() })
         startRaf()
         pushState()
-        if (!winner.current && !pvp) scheduleBot()
+        if (!winner.current && !pvp && !remotePvp) scheduleBot()
+        if (!winner.current && remotePvp) multiplayerRef.current?.onMove({ x: g.x, y: g.y })
       }
     }
 
@@ -284,7 +313,10 @@ const GomokuGame = forwardRef(function GomokuGame({ mode, difficulty, aiFirst, o
       const h = hoverCell.current
       if (!h) return
       const pvp = modeRef.current === 'pvp'
-      if (busy.current || winner.current || (!pvp && current.current !== HUMAN)) return
+      const remotePvp = modeRef.current === 'remote-pvp'
+      const localPlayer = multiplayerRef.current?.localPlayer ?? HUMAN
+      const myTurn = remotePvp ? current.current === localPlayer : (pvp || current.current === HUMAN)
+      if (busy.current || winner.current || !myTurn) return
       if (board.current.has(`${h.x},${h.y}`)) return
       const { x, y } = g2p(h.x, h.y)
       const r   = cell() / 2 - 5
