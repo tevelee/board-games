@@ -34,11 +34,13 @@ function finishMove(state, key, pvp) {
   }
 }
 
-const DotsBoxesGame = forwardRef(function DotsBoxesGame({ mode, difficulty, settings, aiFirst, onStateChange }, ref) {
+const DotsBoxesGame = forwardRef(function DotsBoxesGame({ mode, difficulty, settings, aiFirst, multiplayer, onStateChange }, ref) {
   const boardSize = normalizeSize(settings?.boardSize)
   const [gs, setGs] = useState(() => makeState(boardSize))
   const [hoverEdge, setHoverEdge] = useState(null)
   const historyRef = useRef([])
+  const multiplayerRef = useRef(multiplayer)
+  useEffect(() => { multiplayerRef.current = multiplayer }, [multiplayer])
 
   const { modeRef, diffRef } = useGameSync({
     ref,
@@ -52,6 +54,7 @@ const DotsBoxesGame = forwardRef(function DotsBoxesGame({ mode, difficulty, sett
     makeInitial: () => makeState(boardSize),
     onExtraReset: () => setHoverEdge(null),
     preserveScores: false,
+    onRemoteMove: ({ key }) => setGs(s => finishMove(s, key, true)),
   })
 
   useEffect(() => {
@@ -71,27 +74,33 @@ const DotsBoxesGame = forwardRef(function DotsBoxesGame({ mode, difficulty, sett
     onResult: (state, key) => {
       if (!state.busy) return state
       if (!key) return { ...state, winner: DRAW, busy: false }
-      return finishMove(state, key, modeRef.current === 'pvp')
+      return finishMove(state, key, modeRef.current === 'pvp' || modeRef.current === 'remote-pvp')
     },
     setState: setGs,
     deps: [gs.busy, gs.current, gs.size, gs.lastMove?.key, gs.completed.length, gs.edges],
   })
 
   function handleEdgeClick(key) {
-    const pvp = modeRef.current === 'pvp'
+    const pvp = modeRef.current === 'pvp' || modeRef.current === 'remote-pvp'
+    const remotePvp = modeRef.current === 'remote-pvp'
+    const localPlayer = multiplayerRef.current?.localPlayer ?? P1
     if (gs.winner || gs.busy || gs.edges[key]) return
+    if (remotePvp && gs.current !== localPlayer) return
     if (!pvp && gs.current === P2) return
 
     historyRef.current.push(gs)
-    setGs(state => finishMove(state, key, modeRef.current === 'pvp'))
+    setGs(state => finishMove(state, key, modeRef.current === 'pvp' || modeRef.current === 'remote-pvp'))
+    if (remotePvp) multiplayerRef.current?.onMove({ key })
   }
 
   const { size, edges, boxes, current, winner, busy, lastMove, completed } = gs
   const board = size * CELL
   const width = board + PAD * 2
   const height = board + PAD * 2 + FOOTER
-  const pvp = mode === 'pvp'
-  const humanTurn = !winner && !busy && (pvp || current === P1)
+  const pvp = mode === 'pvp' || mode === 'remote-pvp'
+  const remotePvp = mode === 'remote-pvp'
+  const localPlayer = multiplayer?.localPlayer ?? P1
+  const humanTurn = !winner && !busy && (remotePvp ? current === localPlayer : (pvp || current === P1))
   const allEdges = getAllEdges(size)
   const completedSet = new Set(completed)
   const counts = countBoxes(boxes)

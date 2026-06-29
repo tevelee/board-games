@@ -65,10 +65,12 @@ function finalizeTurn(s, board, move, converted, movedPlayer, pvp) {
   }
 }
 
-const AtaxxGame = forwardRef(function AtaxxGame({ mode, difficulty, settings, aiFirst, onStateChange }, ref) {
+const AtaxxGame = forwardRef(function AtaxxGame({ mode, difficulty, settings, aiFirst, multiplayer, onStateChange }, ref) {
   const boardLayout = normalizeBoardLayoutId(settings?.boardLayout)
   const [gs, setGs] = useState(() => makeInitialState(boardLayout))
   const historyRef = useRef([])
+  const multiplayerRef = useRef(multiplayer)
+  useEffect(() => { multiplayerRef.current = multiplayer }, [multiplayer])
 
   const { modeRef, diffRef } = useGameSync({
     ref,
@@ -80,6 +82,10 @@ const AtaxxGame = forwardRef(function AtaxxGame({ mode, difficulty, settings, ai
     setGs,
     historyRef,
     makeInitial: () => makeInitialState(boardLayout),
+    onRemoteMove: (move) => setGs(s => {
+      const { board, converted } = applyMove(s.board, move, s.current)
+      return finalizeTurn(s, board, move, converted, s.current, true)
+    }),
   })
 
   useEffect(() => {
@@ -107,7 +113,7 @@ const AtaxxGame = forwardRef(function AtaxxGame({ mode, difficulty, settings, ai
         }
       }
       const { board, converted } = applyMove(s.board, move, s.current)
-      return finalizeTurn(s, board, move, converted, s.current, modeRef.current === 'pvp')
+      return finalizeTurn(s, board, move, converted, s.current, modeRef.current === 'pvp' || modeRef.current === 'remote-pvp')
     },
     setState: setGs,
     deps: [gs.busy, gs.current, gs.lastMove?.to, gs.passed, gs.board],
@@ -115,9 +121,12 @@ const AtaxxGame = forwardRef(function AtaxxGame({ mode, difficulty, settings, ai
 
   function handleCellClick(cellIdx) {
     const { board, current, selected, winner, busy } = gs
-    const pvp = modeRef.current === 'pvp'
+    const pvp = modeRef.current === 'pvp' || modeRef.current === 'remote-pvp'
+    const remotePvp = modeRef.current === 'remote-pvp'
+    const localPlayer = multiplayerRef.current?.localPlayer ?? P1
     if (winner || busy) return
     if (board[cellIdx] === BLOCKED) return
+    if (remotePvp && current !== localPlayer) return
     if (!pvp && current === P2) return
 
     const moves = getValidMoves(board, current)
@@ -138,13 +147,16 @@ const AtaxxGame = forwardRef(function AtaxxGame({ mode, difficulty, settings, ai
     historyRef.current.push(gs)
     setGs(s => {
       const { board: nextBoard, converted } = applyMove(s.board, move, s.current)
-      return finalizeTurn(s, nextBoard, move, converted, s.current, modeRef.current === 'pvp')
+      return finalizeTurn(s, nextBoard, move, converted, s.current, modeRef.current === 'pvp' || modeRef.current === 'remote-pvp')
     })
+    if (remotePvp) multiplayerRef.current?.onMove(move)
   }
 
   const { board, current, selected, winner, busy, lastMove, converted } = gs
-  const pvp = mode === 'pvp'
-  const humanTurn = !winner && !busy && (pvp || current === P1)
+  const pvp = mode === 'pvp' || mode === 'remote-pvp'
+  const remotePvp = mode === 'remote-pvp'
+  const localPlayer = multiplayer?.localPlayer ?? P1
+  const humanTurn = !winner && !busy && (remotePvp ? current === localPlayer : (pvp || current === P1))
   const moves = humanTurn ? getValidMoves(board, current) : []
   const selectable = new Set(moves.map(move => move.from))
   const targets = new Map(

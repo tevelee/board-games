@@ -1,4 +1,4 @@
-import { forwardRef, useRef, useState } from 'react'
+import { forwardRef, useEffect, useRef, useState } from 'react'
 import { useGameSync } from '../../hooks/useGameSync.js'
 import { P1_COLOR, P2_COLOR, playerColor } from '../shared/colors.js'
 import { incrementPlayerScore } from '../shared/runtime.js'
@@ -99,10 +99,12 @@ function finishMove(s, board, move, pvp) {
   }
 }
 
-const HexGame = forwardRef(function HexGame({ mode, difficulty, aiFirst, onStateChange }, ref) {
+const HexGame = forwardRef(function HexGame({ mode, difficulty, aiFirst, multiplayer, onStateChange }, ref) {
   const [gs, setGs] = useState(makeInitialState)
   const [hovered, setHovered] = useState(-1)
   const historyRef = useRef([])
+  const multiplayerRef = useRef(multiplayer)
+  useEffect(() => { multiplayerRef.current = multiplayer }, [multiplayer])
 
   const { modeRef, diffRef } = useGameSync({
     ref,
@@ -115,6 +117,10 @@ const HexGame = forwardRef(function HexGame({ mode, difficulty, aiFirst, onState
     historyRef,
     makeInitial: makeInitialState,
     onExtraReset: () => setHovered(-1),
+    onRemoteMove: ({ cellIdx }) => setGs(s => {
+      const nextBoard = applyMove(s.board, cellIdx, s.current)
+      return finishMove(s, nextBoard, cellIdx, true)
+    }),
   })
 
   useAiTurn({
@@ -125,7 +131,7 @@ const HexGame = forwardRef(function HexGame({ mode, difficulty, aiFirst, onState
       if (!s.busy) return s
       if (!isValidMove(s.board, move)) return { ...s, busy: false }
       const board = applyMove(s.board, move, s.current)
-      return finishMove(s, board, move, modeRef.current === 'pvp')
+      return finishMove(s, board, move, modeRef.current === 'pvp' || modeRef.current === 'remote-pvp')
     },
     setState: setGs,
     deps: [gs.busy, gs.board, gs.current, gs.lastMove],
@@ -133,21 +139,27 @@ const HexGame = forwardRef(function HexGame({ mode, difficulty, aiFirst, onState
 
   function handleCellClick(cellIdx) {
     const { board, current, winner, busy } = gs
-    const pvp = modeRef.current === 'pvp'
+    const pvp = modeRef.current === 'pvp' || modeRef.current === 'remote-pvp'
+    const remotePvp = modeRef.current === 'remote-pvp'
+    const localPlayer = multiplayerRef.current?.localPlayer ?? P1
     if (winner || busy) return
+    if (remotePvp && current !== localPlayer) return
     if (!pvp && current === P2) return
     if (!isValidMove(board, cellIdx)) return
 
     historyRef.current.push(gs)
     setGs(s => {
       const nextBoard = applyMove(s.board, cellIdx, s.current)
-      return finishMove(s, nextBoard, cellIdx, modeRef.current === 'pvp')
+      return finishMove(s, nextBoard, cellIdx, modeRef.current === 'pvp' || modeRef.current === 'remote-pvp')
     })
+    if (remotePvp) multiplayerRef.current?.onMove({ cellIdx })
   }
 
   const { board, current, winner, busy, lastMove, winningPath } = gs
-  const pvp = mode === 'pvp'
-  const humanTurn = !winner && !busy && (pvp || current === P1)
+  const pvp = mode === 'pvp' || mode === 'remote-pvp'
+  const remotePvp = mode === 'remote-pvp'
+  const localPlayer = multiplayer?.localPlayer ?? P1
+  const humanTurn = !winner && !busy && (remotePvp ? current === localPlayer : (pvp || current === P1))
   const winningSet = new Set(winningPath)
   const { p1, p2, empty } = countPieces(board)
   const currentColor = playerColor(current)

@@ -1,4 +1,4 @@
-import { useState, useRef, forwardRef } from 'react'
+import { useState, useRef, useEffect, forwardRef } from 'react'
 import {
   P1, P2,
   NODE_POS, EDGES, ADJACENCY, MILLS,
@@ -39,13 +39,21 @@ function findClosedMill(cells, node, player) {
   return MILLS.find(m => m.includes(node) && m.every(n => cells[n] === player)) ?? null
 }
 
-const MorrisGame = forwardRef(function MorrisGame({ mode, difficulty, aiFirst, onStateChange }, ref) {
+const MorrisGame = forwardRef(function MorrisGame({ mode, difficulty, aiFirst, multiplayer, onStateChange }, ref) {
   const [gs, setGs] = useState(makeInitialState)
 
   const historyRef = useRef([])
+  const multiplayerRef = useRef(multiplayer)
+  useEffect(() => { multiplayerRef.current = multiplayer }, [multiplayer])
+
   const { modeRef, diffRef } = useGameSync({
     ref, mode, difficulty, aiFirst, onStateChange,
     gs, setGs, historyRef, makeInitial: makeInitialState,
+    onRemoteMove: (data) => setGs(s => {
+      if (data.action) return applyPlaceOrMove(s, data.action)
+      if (data.removal !== undefined) return applyRemoval(s, data.removal)
+      return s
+    }),
   })
 
   // ── AI trigger ──────────────────────────────────────────────────────────────
@@ -78,7 +86,7 @@ const MorrisGame = forwardRef(function MorrisGame({ mode, difficulty, aiFirst, o
   function applyPlaceOrMove(s, action) {
     const { cells, inHand, onBoard, current, scores } = s
     const opp     = current === P1 ? P2 : P1
-    const pvp     = modeRef.current === 'pvp'
+    const pvp     = modeRef.current === 'pvp' || modeRef.current === 'remote-pvp'
     const newCells  = [...cells]
     const newInHand = [...inHand]
     const newOnBoard = [...onBoard]
@@ -134,7 +142,7 @@ const MorrisGame = forwardRef(function MorrisGame({ mode, difficulty, aiFirst, o
   function applyRemoval(s, nodeIdx) {
     const { cells, inHand, onBoard, current, scores } = s
     const opp        = current === P1 ? P2 : P1
-    const pvp        = modeRef.current === 'pvp'
+    const pvp        = modeRef.current === 'pvp' || modeRef.current === 'remote-pvp'
     if (!Number.isInteger(nodeIdx) || cells[nodeIdx] !== opp) {
       if (checkWin(cells, inHand, onBoard, current)) {
         return {
@@ -183,8 +191,11 @@ const MorrisGame = forwardRef(function MorrisGame({ mode, difficulty, aiFirst, o
 
   function handleNodeClick(idx) {
     const { cells, inHand, onBoard, current, selected, mustRemove, winner, busy } = gs
-    const pvp = modeRef.current === 'pvp'
+    const pvp = modeRef.current === 'pvp' || modeRef.current === 'remote-pvp'
+    const remotePvp = modeRef.current === 'remote-pvp'
+    const localPlayer = multiplayerRef.current?.localPlayer ?? P1
     if (busy || winner) return
+    if (remotePvp && current !== localPlayer) return
     if (!pvp && current === P2) return
 
     // Removal step
@@ -192,10 +203,12 @@ const MorrisGame = forwardRef(function MorrisGame({ mode, difficulty, aiFirst, o
       const removable = getRemovable(cells, current)
       if (removable.length === 0) {
         setGs(s => applyRemoval(s, null))
+        if (remotePvp) multiplayerRef.current?.onMove({ removal: null })
         return
       }
       if (!removable.includes(idx)) return
       setGs(s => applyRemoval(s, idx))
+      if (remotePvp) multiplayerRef.current?.onMove({ removal: idx })
       return
     }
 
@@ -204,6 +217,7 @@ const MorrisGame = forwardRef(function MorrisGame({ mode, difficulty, aiFirst, o
       if (cells[idx] !== 0) return
       historyRef.current.push(gs)
       setGs(s => applyPlaceOrMove(s, { type: 'place', to: idx }))
+      if (remotePvp) multiplayerRef.current?.onMove({ action: { type: 'place', to: idx } })
       return
     }
 
@@ -222,18 +236,22 @@ const MorrisGame = forwardRef(function MorrisGame({ mode, difficulty, aiFirst, o
       if (!validMove) { setGs(s => ({ ...s, selected: -1 })); return }
       historyRef.current.push(gs)
       setGs(s => applyPlaceOrMove(s, { type: 'move', from: selected, to: idx }))
+      if (remotePvp) multiplayerRef.current?.onMove({ action: { type: 'move', from: selected, to: idx } })
     }
   }
 
   // ── Derived rendering data ──────────────────────────────────────────────────
 
   const { cells, inHand, onBoard, current, selected, mustRemove, winner, busy, lastNode, winMill, closedMill, removedPiece, lastAction } = gs
-  const pvp    = mode === 'pvp'
+  const pvp    = mode === 'pvp' || mode === 'remote-pvp'
+  const remotePvp = mode === 'remote-pvp'
+  const localPlayer = multiplayer?.localPlayer ?? P1
   const flying = !winner && !mustRemove && inHand[current] === 0 && onBoard[current] === 3
 
   // Valid targets for the selected piece (or for placement)
   let validTargets = new Set()
-  if (!busy && !winner && (pvp || current === P1)) {
+  const myTurn = remotePvp ? current === localPlayer : (pvp || current === P1)
+  if (!busy && !winner && myTurn) {
     if (mustRemove) {
       getRemovable(cells, current).forEach(n => validTargets.add(n))
     } else if (inHand[current] > 0) {

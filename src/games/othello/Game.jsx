@@ -1,4 +1,4 @@
-import { useState, useRef, forwardRef } from 'react'
+import { useState, useRef, useEffect, forwardRef } from 'react'
 import { incrementPlayerScore } from '../shared/runtime.js'
 import {
   P1, P2,
@@ -25,13 +25,21 @@ function makeInitialState() {
 // Star points (traditional board markers)
 const STARS = [18, 21, 42, 45]
 
-const OthelloGame = forwardRef(function OthelloGame({ mode, difficulty, aiFirst, onStateChange }, ref) {
+const OthelloGame = forwardRef(function OthelloGame({ mode, difficulty, aiFirst, multiplayer, onStateChange }, ref) {
   const [gs, setGs] = useState(makeInitialState)
 
   const historyRef = useRef([])
+  const multiplayerRef = useRef(multiplayer)
+  useEffect(() => { multiplayerRef.current = multiplayer }, [multiplayer])
+
   const { modeRef, diffRef } = useGameSync({
     ref, mode, difficulty, aiFirst, onStateChange,
     gs, setGs, historyRef, makeInitial: makeInitialState,
+    onRemoteMove: ({ cellIdx }) => setGs(s => {
+      if (s.winner) return s
+      const { board: nb, flips } = applyMove(s.board, cellIdx, s.current)
+      return afterMove(s, nb, cellIdx, true, flips)
+    }),
   })
 
   // ── AI trigger ──────────────────────────────────────────────────────────────
@@ -41,9 +49,10 @@ const OthelloGame = forwardRef(function OthelloGame({ mode, difficulty, aiFirst,
     startTask: () => runAiTask('othello', 'computeOthelloMove', [gs.board, gs.current, diffRef.current]),
     onResult: (s, move) => {
       if (!s.busy) return s
-      if (move == null) return applyPass(s, modeRef.current === 'pvp')
+      const pvp = modeRef.current === 'pvp' || modeRef.current === 'remote-pvp'
+      if (move == null) return applyPass(s, pvp)
       const { board: nb, flips } = applyMove(s.board, move, s.current)
-      return afterMove(s, nb, move, modeRef.current === 'pvp', flips)
+      return afterMove(s, nb, move, pvp, flips)
     },
     setState: setGs,
     deps: [gs.busy, gs.board, gs.current, gs.lastMove, gs.passed],
@@ -90,8 +99,11 @@ const OthelloGame = forwardRef(function OthelloGame({ mode, difficulty, aiFirst,
 
   function handleCellClick(cellIdx) {
     const { board, current, winner, busy } = gs
-    const pvp = modeRef.current === 'pvp'
+    const pvp = modeRef.current === 'pvp' || modeRef.current === 'remote-pvp'
+    const remotePvp = modeRef.current === 'remote-pvp'
+    const localPlayer = multiplayerRef.current?.localPlayer ?? P1
     if (winner || busy) return
+    if (remotePvp && current !== localPlayer) return
     if (!pvp && current === P2) return
     if (board[cellIdx] !== 0) return
     const { row, col } = pos(cellIdx)
@@ -100,15 +112,19 @@ const OthelloGame = forwardRef(function OthelloGame({ mode, difficulty, aiFirst,
     historyRef.current.push(gs)
     setGs(s => {
       const { board: nb, flips } = applyMove(s.board, cellIdx, s.current)
-      return afterMove(s, nb, cellIdx, modeRef.current === 'pvp', flips)
+      return afterMove(s, nb, cellIdx, modeRef.current === 'pvp' || modeRef.current === 'remote-pvp', flips)
     })
+    if (remotePvp) multiplayerRef.current?.onMove({ cellIdx })
   }
 
   // ── Derived data for render ─────────────────────────────────────────────────
 
   const { board, current, winner, busy, lastMove, flipped } = gs
-  const pvp        = mode === 'pvp'
-  const validMoves = (!winner && !busy && (pvp || current === P1))
+  const pvp        = mode === 'pvp' || mode === 'remote-pvp'
+  const remotePvp  = mode === 'remote-pvp'
+  const localPlayer = multiplayer?.localPlayer ?? P1
+  const myTurn     = remotePvp ? current === localPlayer : (pvp || current === P1)
+  const validMoves = (!winner && !busy && myTurn)
     ? new Set(getValidMoves(board, current))
     : new Set()
 

@@ -30,10 +30,13 @@ export default function createTicTacToeGame({
   aiExportName,
   title,
 }) {
-  const Game = forwardRef(function TicTacToeGame({ mode, difficulty, aiFirst, onStateChange }, ref) {
+  const Game = forwardRef(function TicTacToeGame({ mode, difficulty, aiFirst, multiplayer, onStateChange }, ref) {
     const [gs, setGs] = useState(() => makeState(variant))
     const historyRef = useRef([])
     const rootRef = useRef(null)
+    const multiplayerRef = useRef(multiplayer)
+    useEffect(() => { multiplayerRef.current = multiplayer }, [multiplayer])
+
     const { modeRef, diffRef } = useGameSync({
       ref,
       mode,
@@ -44,6 +47,11 @@ export default function createTicTacToeGame({
       setGs,
       historyRef,
       makeInitial: () => makeState(variant),
+      onRemoteMove: ({ index }) => setGs(s => {
+        const next = applyMove(s, index)
+        if (next === s) return s
+        return { ...next, busy: false }
+      }),
     })
 
     useEffect(() => {
@@ -76,15 +84,19 @@ export default function createTicTacToeGame({
     function applyMoveForMode(state, index) {
       const next = applyMove(state, index)
       if (next === state) return state
-      const needsAI = modeRef.current !== 'pvp' && !next.winner && next.current === P2
+      const needsAI = modeRef.current !== 'pvp' && modeRef.current !== 'remote-pvp' && !next.winner && next.current === P2
       return { ...next, busy: needsAI }
     }
 
     function handleMove(index) {
+      const remotePvp = modeRef.current === 'remote-pvp'
+      const localPlayer = multiplayerRef.current?.localPlayer ?? P1
       if (gs.winner || gs.busy || !legalMoves.has(index)) return
-      if (modeRef.current !== 'pvp' && gs.current === P2) return
+      if (remotePvp && gs.current !== localPlayer) return
+      if (modeRef.current !== 'pvp' && modeRef.current !== 'remote-pvp' && gs.current === P2) return
       historyRef.current.push(gs)
       setGs(state => applyMoveForMode(state, index))
+      if (remotePvp) multiplayerRef.current?.onMove({ index })
     }
 
     function handleKeyDown(event) {
@@ -104,7 +116,8 @@ export default function createTicTacToeGame({
         <div className="ttt-shell">
           <div className="ttt-board" role="grid" aria-label={`${title} board`}>
             {gs.board.map((cell, index) => {
-              const isLegal = legalMoves.has(index) && !gs.busy && !gs.winner && (mode === 'pvp' || gs.current === P1)
+              const localPlayer = multiplayer?.localPlayer ?? P1
+              const isLegal = legalMoves.has(index) && !gs.busy && !gs.winner && (mode === 'pvp' || mode === 'remote-pvp' ? gs.current === localPlayer : gs.current === P1)
               const classes = [
                 'ttt-cell',
                 cell && 'filled',
