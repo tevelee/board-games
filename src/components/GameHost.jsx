@@ -16,6 +16,20 @@ const GameHost = forwardRef(function GameHost({
 }, ref) {
   const gameRefs = useRef({})
   const [uiByGame, setUiByGame] = useState(createInitialUiByGame)
+  // Games mount on first visit and then stay mounted, so switching back to a
+  // previously played game resumes its in-progress state. Games never
+  // visited this session are not mounted at all, keeping initial load light.
+  // Previous id is tracked in state (not a ref) so this stays safe under
+  // StrictMode's double-render purity check.
+  const [mountedIds, setMountedIds] = useState(() => new Set(activeGameId ? [activeGameId] : []))
+  const [prevActiveGameId, setPrevActiveGameId] = useState(activeGameId)
+
+  if (activeGameId !== prevActiveGameId) {
+    setPrevActiveGameId(activeGameId)
+    if (activeGameId && !mountedIds.has(activeGameId)) {
+      setMountedIds(new Set(mountedIds).add(activeGameId))
+    }
+  }
 
   const activeUiState = useMemo(
     () => activeGameId ? (uiByGame[activeGameId] ?? createGameUiState()) : createGameUiState(),
@@ -54,7 +68,7 @@ const GameHost = forwardRef(function GameHost({
       visibility:    activeGameId ? 'visible' : 'hidden',
       pointerEvents: activeGameId ? 'auto'    : 'none',
     }}>
-      {playableGames.map(({ id, Component }) => (
+      {playableGames.filter(game => mountedIds.has(game.id)).map(({ id, Component }) => (
         <div
           key={id}
           className="game-layer"

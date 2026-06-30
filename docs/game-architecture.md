@@ -24,6 +24,12 @@ Each game owns:
 - local game history for undo
 - game-specific animations
 
+`GameHost` mounts a game component the first time it becomes active and then
+keeps it mounted for the rest of the session (hidden via CSS, not unmounted),
+so switching back to a previously played game resumes its in-progress state
+instead of resetting. Games that are never opened in a session are never
+mounted, which keeps initial load light as the library grows.
+
 ## Required Game Component Contract
 
 Every playable game component must be a `forwardRef` component that accepts:
@@ -89,11 +95,25 @@ src/games/<game-id>/
   Game.jsx      # board UI, state ownership, shell contract
   logic.js      # pure rules and state transitions
   ai.js         # optional AI
+  meta.js       # hint, rules, options, scoreLabels for this game
   styles.css    # optional, only if shared CSS tokens are not enough
 ```
 
+`meta.js` exports a plain object: `hint` (optional short string), `rules`
+(`{ objective, bullets }`), `options` (optional settings array), and
+`scoreLabels` (optional `[p1Label, p2Label]`). Keeping this colocated with
+the game means `src/playableGames.jsx` only needs to import the component
+and meta and add one line to its `registrations` list — it does not grow
+per-game beyond that.
+
 Shared game helpers live in `src/games/shared`. Game shell components stay in
 `src/components`, and playable game registration stays in `src/playableGames.jsx`.
+
+Launcher thumbnails live in `src/components/thumbnails/`: one renderer module
+per board style (shared across close variants, e.g. checkers/draughts/chess),
+plus `primitives.jsx` for the shared SVG building blocks (Board, Piece, Card,
+Grid, ...). `src/components/GameThumbnail.jsx` only maps a catalog `visual`
+id to a renderer and draws the shared table frame.
 
 ## Registration Checklist
 
@@ -101,9 +121,12 @@ To add a game to the library:
 
 1. Add catalog metadata to `src/gameRegistry.js`.
 2. Implement the game component contract.
-3. Add the component to `src/playableGames.jsx`.
-4. Add or reuse a launcher tile graphic in `GameThumbnail`.
-5. Run `npm run build`.
+3. Add a `meta.js` next to `Game.jsx` with hint/rules/options/scoreLabels.
+4. Add the component and meta to the `registrations` list in
+   `src/playableGames.jsx`.
+5. Add or reuse a launcher tile graphic: a renderer module in
+   `src/components/thumbnails/` registered in `GameThumbnail.jsx`.
+6. Run `npm run build`.
 
 `App.jsx`, `Header.jsx`, and `BottomBar.jsx` should not need per-game edits.
 When a game needs selectable variants such as board size, declare an `options`

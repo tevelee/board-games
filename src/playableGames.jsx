@@ -1,410 +1,84 @@
 import GomokuGame from './games/gomoku/Game.jsx'
+import gomokuMeta from './games/gomoku/meta.js'
 import MorrisGame from './games/morris/Game.jsx'
+import morrisMeta from './games/morris/meta.js'
 import OthelloGame from './games/othello/Game.jsx'
+import othelloMeta from './games/othello/meta.js'
 import Connect4Game from './games/connect4/Game.jsx'
+import connect4Meta from './games/connect4/meta.js'
 import AtaxxGame from './games/ataxx/Game.jsx'
+import ataxxMeta from './games/ataxx/meta.js'
 import HexGame from './games/hex/Game.jsx'
+import hexMeta from './games/hex/meta.js'
 import PentagoGame from './games/pentago/Game.jsx'
+import pentagoMeta from './games/pentago/meta.js'
 import QuartoGame from './games/quarto/Game.jsx'
-import { BOARD_LAYOUTS as ATAXX_BOARD_LAYOUTS } from './games/ataxx/logic.js'
+import quartoMeta from './games/quarto/meta.js'
 import CheckersGame from './games/checkers/Game.jsx'
+import checkersMeta from './games/checkers/meta.js'
 import InternationalCheckersGame from './games/international-checkers/Game.jsx'
+import internationalCheckersMeta from './games/international-checkers/meta.js'
 import DotsBoxesGame from './games/dots-boxes/Game.jsx'
+import dotsBoxesMeta from './games/dots-boxes/meta.js'
 import TicTacToeGame from './games/tic-tac-toe/Game.jsx'
+import ticTacToeMeta from './games/tic-tac-toe/meta.js'
 import UltimateTicTacToeGame from './games/ultimate-tic-tac-toe/Game.jsx'
+import ultimateTicTacToeMeta from './games/ultimate-tic-tac-toe/meta.js'
 import VanishingTicTacToeGame from './games/tic-tac-toe-disappear/Game.jsx'
+import vanishingTicTacToeMeta from './games/tic-tac-toe-disappear/meta.js'
 import SudokuGame from './games/sudoku/Game.jsx'
+import sudokuMeta from './games/sudoku/meta.js'
 import BackgammonGame from './games/backgammon/Game.jsx'
+import backgammonMeta from './games/backgammon/meta.js'
 import NonogramGame from './games/nonogram/Game.jsx'
+import nonogramMeta from './games/nonogram/meta.js'
 import BlockPuzzleGame from './games/block-puzzle/Game.jsx'
+import blockPuzzleMeta from './games/block-puzzle/meta.js'
 import TwentyFortyEightGame from './games/2048/Game.jsx'
+import twentyFortyEightMeta from './games/2048/meta.js'
 import ThreesGame from './games/threes/Game.jsx'
+import threesMeta from './games/threes/meta.js'
 import HiveGame from './games/hive/Game.jsx'
+import hiveMeta from './games/hive/meta.js'
 import QuoridorGame from './games/quoridor/Game.jsx'
+import quoridorMeta from './games/quoridor/meta.js'
 import MastermindGame from './games/mastermind/Game.jsx'
+import mastermindMeta from './games/mastermind/meta.js'
 import { gamesById } from './gameRegistry.js'
 
-export const playableGames = [
-  {
-    ...gamesById.gomoku,
-    Component: GomokuGame,
-    hint: 'Drag · Pinch/scroll to zoom · Tap to place',
-    rules: {
-      objective: 'Place five stones in a straight line before your opponent does.',
-      bullets: [
-        'Tap any empty intersection to place your stone.',
-        'Lines can run horizontally, vertically, or diagonally.',
-        'The first player to make five or more connected stones wins.',
-        'If the board fills with no five-in-a-row, the game is a draw.',
-      ],
-    },
-  },
-  {
-    ...gamesById.morris,
-    Component: MorrisGame,
-    hint: 'Tap a node to place · Tap piece then target to move',
-    rules: {
-      objective: 'Make mills, remove enemy stones, and leave the opponent unable to play.',
-      bullets: [
-        'Place all 9 stones, then move one stone per turn.',
-        'A mill is 3 of your stones in a row on connected board nodes.',
-        'Making a mill removes one opponent stone that is not inside a mill.',
-        'With exactly 3 stones left, you may jump to any empty node.',
-        'Win when the opponent has fewer than 3 stones or no legal move.',
-      ],
-    },
-  },
-  {
-    ...gamesById.othello,
-    Component: OthelloGame,
-    rules: {
-      objective: 'Finish with more discs than your opponent.',
-      bullets: [
-        'Place a disc so at least one enemy line is trapped between your new disc and another of yours.',
-        'Trapped discs flip to your color in every valid direction.',
-        'If you have no legal move, your turn is passed.',
-        'The game ends when neither player can move.',
-      ],
-    },
-  },
-  {
-    ...gamesById.connect4,
-    Component: Connect4Game,
-    rules: {
-      objective: 'Connect four of your discs in a row.',
-      bullets: [
-        'Tap a column to drop your disc into the lowest open slot.',
-        'Four can be horizontal, vertical, or diagonal.',
-        'Block threats while building your own line.',
-        'A full board with no four-in-a-row is a draw.',
-      ],
-    },
-  },
-  {
-    ...gamesById.ataxx,
-    Component: AtaxxGame,
-    hint: 'Tap a piece · Clone nearby or jump two cells',
-    rules: {
-      objective: 'Control more cells than your opponent when no moves remain.',
-      bullets: [
-        'Move to a neighboring cell to clone your piece.',
-        'Jump two cells to move the original piece instead.',
-        'After each move, adjacent enemy pieces convert to your color.',
-        'If a player has no legal move, the turn passes.',
-      ],
-    },
-    options: [
-      {
-        id: 'boardLayout',
-        label: 'Board',
-        defaultValue: 'classic',
-        options: ATAXX_BOARD_LAYOUTS.map(layout => ({
-          value: layout.id,
-          label: layout.label,
-        })),
-      },
-    ],
-  },
-  {
-    ...gamesById.hex,
-    Component: HexGame,
-    hint: 'Blue connects left-right · Red connects top-bottom',
-    rules: {
-      objective: 'Build an unbroken chain between your two colored sides before your opponent connects theirs.',
-      bullets: [
-        'Players alternate placing one stone on any empty hex.',
-        'Player 1 connects the blue left and right sides.',
-        'Player 2 connects the red top and bottom sides.',
-        'Connected stones touch along hex edges, not just corners.',
-        'Hex cannot end in a draw; one player will complete a connection.',
-      ],
-    },
-  },
-  {
-    ...gamesById.pentago,
-    Component: PentagoGame,
-    hint: 'Place a marble, then rotate a quadrant',
-    rules: {
-      objective: 'Make five marbles in a row before your opponent does.',
-      bullets: [
-        'Place one marble on any empty space.',
-        'If that placement makes five in a row, you win immediately.',
-        'Otherwise rotate one quadrant 90 degrees clockwise or counterclockwise.',
-        'Five can run horizontally, vertically, or diagonally across quadrants.',
-        'If one rotation gives both players five in a row, the game is a draw.',
-      ],
-    },
-  },
-  {
-    ...gamesById.quarto,
-    Component: QuartoGame,
-    hint: 'Choose a piece for the opponent · Place the piece you receive',
-    rules: {
-      objective: 'Place the fourth piece in a row whose pieces share at least one attribute.',
-      bullets: [
-        'Every piece is unique: tall or short, light or dark, round or square, solid or hollow.',
-        'On your turn, place the piece chosen for you.',
-        'After placing, choose any remaining piece for your opponent to place.',
-        'Four pieces in a row win if they share any one attribute.',
-        'Rows, columns, and the two diagonals count.',
-      ],
-    },
-  },
-  {
-    ...gamesById.checkers,
-    Component: CheckersGame,
-    hint: 'Captures are forced · Chain jumps continue',
-    rules: {
-      objective: 'Capture all opposing pieces or block every opposing move.',
-      bullets: [
-        'Men move diagonally forward on dark squares.',
-        'Jump over an adjacent enemy piece to capture it.',
-        'Captures are mandatory, and extra jumps with the same piece continue.',
-        'Reach the far row to become a king, which moves diagonally both ways.',
-      ],
-    },
-  },
-  {
-    ...gamesById['international-checkers'],
-    Component: InternationalCheckersGame,
-    hint: 'Longest captures are forced · Kings fly',
-    rules: {
-      objective: 'Capture all opposing pieces or leave the opponent without a legal move.',
-      bullets: [
-        'The game uses a 10x10 board with 20 men per player.',
-        'Men move one square diagonally forward, but capture forward or backward.',
-        'Captures are mandatory, and you must choose a sequence that captures the most pieces.',
-        'Kings move and capture across any distance on open diagonals.',
-        'A man becomes a king only if its completed move ends on the far row.',
-      ],
-    },
-  },
-  {
-    ...gamesById['dots-boxes'],
-    Component: DotsBoxesGame,
-    hint: 'Tap an open edge · Completing a box earns another turn',
-    rules: {
-      objective: 'Claim more boxes than your opponent.',
-      bullets: [
-        'Tap one open edge between two dots each turn.',
-        'Completing the fourth side of a box claims it for you.',
-        'Claiming at least one box gives you another turn.',
-        'The game ends when every edge is drawn.',
-      ],
-    },
-    options: [
-      {
-        id: 'boardSize',
-        label: 'Board size',
-        defaultValue: '4',
-        options: [
-          { value: '3', label: '3x3' },
-          { value: '4', label: '4x4' },
-          { value: '5', label: '5x5' },
-          { value: '6', label: '6x6' },
-        ],
-      },
-    ],
-  },
-  {
-    ...gamesById['tic-tac-toe'],
-    Component: TicTacToeGame,
-    hint: 'Tap an empty square · Make three in a row',
-    rules: {
-      objective: 'Make three marks in a row before your opponent does.',
-      bullets: [
-        'Players alternate placing one mark in an empty square.',
-        'Three marks in a row wins horizontally, vertically, or diagonally.',
-        'If all squares fill with no three-in-a-row, the game is a draw.',
-      ],
-    },
-  },
-  {
-    ...gamesById['ultimate-tic-tac-toe'],
-    Component: UltimateTicTacToeGame,
-    hint: 'Your move sends the opponent to the matching small board',
-    rules: {
-      objective: 'Win three small boards in a row on the large board.',
-      bullets: [
-        'Each small board is a normal tic-tac-toe board.',
-        'The cell you choose sends the opponent to the matching small board.',
-        'If that target board is already won or full, the opponent may play in any unfinished board.',
-        'Win a small board to claim its square on the large board.',
-        'Three claimed boards in a row wins the game.',
-      ],
-    },
-  },
-  {
-    ...gamesById['tic-tac-toe-disappear'],
-    Component: VanishingTicTacToeGame,
-    hint: 'Each player keeps only three marks · Oldest mark fades next',
-    rules: {
-      objective: 'Make three in a row while each player has at most three marks on the board.',
-      bullets: [
-        'Players alternate placing one mark in an empty square.',
-        'After your third mark is already in play, placing a new mark removes your oldest mark.',
-        'The faint ring marks the oldest mark that will disappear next.',
-        'The game continues until someone makes three in a row.',
-      ],
-    },
-  },
-  {
-    ...gamesById.backgammon,
-    Component: BackgammonGame,
-    hint: 'Roll dice · Tap a checker, entry, or bear-off tray',
-    scoreLabels: ['P1', 'P2'],
-    rules: {
-      objective: 'Move all 15 checkers home, then bear them off first.',
-      bullets: [
-        'Roll dice, then move checkers by the shown numbers.',
-        'A point with two or more enemy checkers is blocked.',
-        'Landing on one enemy checker sends it to the bar.',
-        'Checkers on the bar must re-enter before any other move.',
-        'Once all your checkers are home, move them off the board.',
-      ],
-    },
-  },
-  {
-    ...gamesById.nonogram,
-    Component: NonogramGame,
-    hint: 'Fill clue runs · Mark blanks · Right-click marks',
-    scoreLabels: ['Filled', 'Mistakes'],
-    rules: {
-      objective: 'Reveal the hidden picture by satisfying every row and column clue.',
-      bullets: [
-        'Numbers show filled runs in order for that row or column.',
-        'There must be at least one blank between separate runs.',
-        'Fill cells you know are part of a run.',
-        'Mark cells you know are blank to avoid mistakes.',
-      ],
-    },
-    options: [
-      {
-        id: 'boardSize',
-        label: 'Board size',
-        defaultValue: '10',
-        options: [
-          { value: '8', label: '8x8' },
-          { value: '10', label: '10x10' },
-          { value: '12', label: '12x12' },
-          { value: '15', label: '15x15' },
-          { value: '20', label: '20x20' },
-          { value: '25', label: '25x25' },
-        ],
-      },
-    ],
-  },
-  {
-    ...gamesById['block-puzzle'],
-    Component: BlockPuzzleGame,
-    hint: 'Drag a piece onto the board · Complete rows or columns',
-    scoreLabels: ['Score', 'Best'],
-    rules: {
-      objective: 'Score as much as possible before no tray piece fits.',
-      bullets: [
-        'Drag one of the three tray pieces onto empty board cells.',
-        'Full rows or columns clear and award bonus points.',
-        'After all three tray pieces are placed, a new tray appears.',
-        'The run ends when none of the available pieces can fit.',
-      ],
-    },
-  },
-  {
-    ...gamesById['2048'],
-    Component: TwentyFortyEightGame,
-    hint: 'Swipe or press arrows · Equal tiles merge',
-    scoreLabels: ['Score', 'Best'],
-    rules: {
-      objective: 'Build the largest power-of-two tile you can before the board locks.',
-      bullets: [
-        'Each move slides every tile as far as it can go.',
-        'Equal tiles that collide merge once into their sum.',
-        'A valid move adds a new 2 or 4 tile to an empty cell.',
-        'The run ends when no slide or merge is possible.',
-      ],
-    },
-  },
-  {
-    ...gamesById.threes,
-    Component: ThreesGame,
-    hint: 'Slide one cell · 1+2 makes 3 · Matching 3+ tiles merge',
-    scoreLabels: ['Score', 'Best'],
-    rules: {
-      objective: 'Build high-value tiles by pairing 1s with 2s and merging equal multiples of 3.',
-      bullets: [
-        'Each move shifts movable tiles one cell in the chosen direction.',
-        'A 1 and a 2 merge into a 3.',
-        'Tiles from 3 upward merge only with an equal tile.',
-        'The next tile enters from the far edge in a row or column that moved.',
-        'The run ends when no tile can move or merge.',
-      ],
-    },
-  },
-  {
-    ...gamesById.sudoku,
-    Component: SudokuGame,
-    hint: 'Fill every row, column, and 3x3 box',
-    scoreLabels: ['Filled', 'Mistakes'],
-    rules: {
-      objective: 'Fill the grid so every row, column, and 3x3 box contains 1-9.',
-      bullets: [
-        'Select an empty cell, then choose a number.',
-        'Each number can appear once per row, column, and box.',
-        'Use notes to track candidates when you are unsure.',
-        'The puzzle is solved when every cell is filled correctly.',
-      ],
-    },
-  },
-  {
-    ...gamesById.mastermind,
-    Component: MastermindGame,
-    hint: 'Pick colors · Submit a full row · Read exact and color clues',
-    scoreLabels: ['Solved', 'Turns'],
-    rules: {
-      objective: 'Deduce the hidden color code before the turns run out.',
-      bullets: [
-        'Fill each row with one color per slot, then submit the row.',
-        'Exact feedback means a color is correct and in the correct slot.',
-        'Color feedback means a color is in the code but in another slot.',
-        'Duplicates can appear from medium difficulty upward.',
-        'The secret is revealed after solving or after the final turn.',
-      ],
-    },
-  },
-  {
-    ...gamesById.quoridor,
-    Component: QuoridorGame,
-    hint: 'Tap a cell to move · Use Place Wall button to add walls',
-    rules: {
-      objective: 'Be the first to move your pawn to the opposite side of the board.',
-      bullets: [
-        'Player 1 (blue) starts at the bottom and must reach the top row.',
-        'Player 2 (red) starts at the top and must reach the bottom row.',
-        'Each turn, either move your pawn one step or place a wall.',
-        'Walls block movement for both players and are 2 cells long.',
-        'A wall cannot fully cut off either player from their goal.',
-        'If adjacent to your opponent, you may jump over them or diagonally around them.',
-        'Each player has 10 walls — use them wisely.',
-      ],
-    },
-  },
-  {
-    ...gamesById.hive,
-    Component: HiveGame,
-    hint: 'Tap a reserve tile · Surround the opposing queen',
-    scoreLabels: ['P1', 'P2'],
-    rules: {
-      objective: 'Surround the opposing queen before your own queen is surrounded.',
-      bullets: [
-        'Place reserve pieces touching your own hive pieces, not the opponent.',
-        'Your queen must be placed by your fourth turn.',
-        'After your queen is placed, top pieces can move by their piece rules.',
-        'Moves may not split the hive into separate groups.',
-        'If both queens are surrounded at once, the game is a draw.',
-      ],
-    },
-  },
+// Each entry pairs a catalog id (defined in gameRegistry.js) with that game's
+// board component and its colocated meta.js (hint/rules/options/scoreLabels).
+const registrations = [
+  ['gomoku', GomokuGame, gomokuMeta],
+  ['morris', MorrisGame, morrisMeta],
+  ['othello', OthelloGame, othelloMeta],
+  ['connect4', Connect4Game, connect4Meta],
+  ['ataxx', AtaxxGame, ataxxMeta],
+  ['hex', HexGame, hexMeta],
+  ['pentago', PentagoGame, pentagoMeta],
+  ['quarto', QuartoGame, quartoMeta],
+  ['checkers', CheckersGame, checkersMeta],
+  ['international-checkers', InternationalCheckersGame, internationalCheckersMeta],
+  ['dots-boxes', DotsBoxesGame, dotsBoxesMeta],
+  ['tic-tac-toe', TicTacToeGame, ticTacToeMeta],
+  ['ultimate-tic-tac-toe', UltimateTicTacToeGame, ultimateTicTacToeMeta],
+  ['tic-tac-toe-disappear', VanishingTicTacToeGame, vanishingTicTacToeMeta],
+  ['backgammon', BackgammonGame, backgammonMeta],
+  ['nonogram', NonogramGame, nonogramMeta],
+  ['block-puzzle', BlockPuzzleGame, blockPuzzleMeta],
+  ['2048', TwentyFortyEightGame, twentyFortyEightMeta],
+  ['threes', ThreesGame, threesMeta],
+  ['sudoku', SudokuGame, sudokuMeta],
+  ['mastermind', MastermindGame, mastermindMeta],
+  ['quoridor', QuoridorGame, quoridorMeta],
+  ['hive', HiveGame, hiveMeta],
 ]
+
+export const playableGames = registrations.map(([id, Component, meta]) => ({
+  ...gamesById[id],
+  Component,
+  ...meta,
+}))
 
 export const playableGameIds = playableGames.map(game => game.id)
 export const playableGamesById = Object.fromEntries(playableGames.map(game => [game.id, game]))
